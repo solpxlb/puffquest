@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font - RetroPix */
+@font-face {
+  font-family: 'RetroPix';
+  src: url('https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/retropix.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -100,6 +109,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-retropix;
   }
 }

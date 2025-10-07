@@ -1,6 +1,9 @@
+import Navbar from "@/components/Navbar";
+
 const Index = () => {
   return (
     <div className="min-h-screen">
+      <Navbar />
       {/* Hero Section */}
       <section 
         className="flex min-h-screen items-center justify-center bg-background bg-cover bg-center bg-no-repeat"
