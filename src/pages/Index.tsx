@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import HowToPlay from "@/components/HowToPlay";
 
 const Index = () => {
   return (
@@ -35,6 +36,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* How to Play Section */}
+      <HowToPlay />
     </div>
   );
 };
