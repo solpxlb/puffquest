@@ -2,14 +2,10 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="flex min-h-screen items-center justify-center bg-background">
-        <div className="container px-4">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              PuffQuest
-            </h1>
-          </div>
-        </div>
+      <section 
+        className="flex min-h-screen items-center justify-center bg-background bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/puffquest_hero_bg.svg)' }}
+      >
       </section>
     </div>
   );
