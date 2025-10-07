@@ -1,5 +1,7 @@
 import Navbar from "@/components/Navbar";
 import HowToPlay from "@/components/HowToPlay";
+import Footer from "@/components/Footer";
+
 
 const Index = () => {
   return (
@@ -39,6 +41,9 @@ const Index = () => {
 
       {/* How to Play Section */}
       <HowToPlay />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
