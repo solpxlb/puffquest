@@ -1,34 +1,18 @@
-import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
-
 const Index = () => {
-  return <div className="min-h-screen">
-      <Navbar />
-      
+  return (
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section 
-        className="flex h-screen items-center bg-background bg-contain bg-right bg-no-repeat px-[5vw] md:px-[8vw] max-w-[2000px] mx-auto"
-        style={{ backgroundImage: 'url(https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/puffquest_hero.svg)' }}
-      >
-        <div className="max-w-[45%] space-y-[clamp(1rem,2vw,2rem)]">
-          <h1 className="text-white font-bold leading-tight" style={{ fontSize: 'clamp(2rem, 4.5vw, 5rem)' }}>
-            ENTER THE WORLD OF SMOKERNOMICS
-          </h1>
-          <p className="text-white" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
-            MONEY FOR NOTHING. PUFFS FOR FREE.
-          </p>
-          <Button 
-            size="lg"
-            className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black h-auto"
-            style={{ 
-              fontSize: 'clamp(1rem, 1.2vw, 1.25rem)',
-              padding: 'clamp(0.75rem, 1.5vw, 1.5rem) clamp(2rem, 3vw, 3rem)'
-            }}
-          >
-            START NOW
-          </Button>
+      <section className="flex min-h-screen items-center justify-center bg-background">
+        <div className="container px-4">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              PuffQuest
+            </h1>
+          </div>
         </div>
       </section>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
