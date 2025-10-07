@@ -153,10 +153,10 @@ const Play = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
       <Navbar />
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 py-24 md:py-32">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
               Choose Your Vice...
             </h1>
