@@ -2,3 +2,9 @@ project_id = "xgisixdxffyvwsfsnjsu"
 
 [auth.web3.solana]
 enabled = true
+
+[functions.purchase-vices]
+verify_jwt = true
+
+[functions.get-team-wallet]
+verify_jwt = false

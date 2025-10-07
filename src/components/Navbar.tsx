@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -12,8 +13,8 @@ const Navbar = () => {
   const isAuthenticated = !!user && !!session;
 
   const navLinks = [
-    { name: "Home", href: "#" },
-    { name: "Play", href: "#" },
+    { name: "Home", href: "/" },
+    { name: "Play", href: "/play" },
     { name: "About", href: "#" },
   ];
 
@@ -31,15 +32,25 @@ const Navbar = () => {
           {/* Desktop Navigation - Center */}
           <div className="hidden md:flex items-center justify-center flex-1">
             <div className="flex items-center space-x-8">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-white hover:text-white/80 transition-colors text-base lg:text-lg font-medium"
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.href.startsWith("#") ? (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-white hover:text-white/80 transition-colors text-base lg:text-lg font-medium"
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-white hover:text-white/80 transition-colors text-base lg:text-lg font-medium"
+                  >
+                    {link.name}
+                  </Link>
+                )
+              )}
             </div>
           </div>
 
@@ -98,16 +109,27 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-black/90 backdrop-blur-sm rounded-lg mt-2 py-4 px-4">
             <div className="flex flex-col space-y-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-white hover:text-white/80 transition-colors text-base font-medium py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.href.startsWith("#") ? (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-white hover:text-white/80 transition-colors text-base font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-white hover:text-white/80 transition-colors text-base font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )
+              )}
               {!connected ? (
                 <Button
                   onClick={() => setVisible(true)}
