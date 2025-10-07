@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useSolanaAuth } from "@/hooks/useSolanaAuth";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { setVisible } = useWalletModal();
+  const { user, session, connected, publicKey, signIn, signOut, isAuthenticating } = useSolanaAuth();
+
+  const isAuthenticated = !!user && !!session;
 
   const navLinks = [
     { name: "Home", href: "#" },
@@ -39,12 +45,37 @@ const Navbar = () => {
 
           {/* Connect Wallet Button - Right (Desktop) */}
           <div className="hidden md:flex items-center">
-            <Button
-              variant="outline"
-              className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all px-6 py-2 text-base"
-            >
-              Connect Wallet
-            </Button>
+            {!connected ? (
+              <Button
+                onClick={() => setVisible(true)}
+                variant="outline"
+                className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all px-6 py-2 text-base"
+              >
+                Connect Wallet
+              </Button>
+            ) : !isAuthenticated ? (
+              <Button
+                onClick={signIn}
+                disabled={isAuthenticating}
+                variant="outline"
+                className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all px-6 py-2 text-base"
+              >
+                {isAuthenticating ? "Signing..." : "Sign In"}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-white text-sm">
+                  {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                </span>
+                <Button
+                  onClick={signOut}
+                  variant="outline"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all px-6 py-2 text-base"
+                >
+                  Disconnect
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,12 +108,37 @@ const Navbar = () => {
                   {link.name}
                 </a>
               ))}
-              <Button
-                variant="outline"
-                className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all w-full mt-2"
-              >
-                Connect Wallet
-              </Button>
+              {!connected ? (
+                <Button
+                  onClick={() => setVisible(true)}
+                  variant="outline"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all w-full mt-2"
+                >
+                  Connect Wallet
+                </Button>
+              ) : !isAuthenticated ? (
+                <Button
+                  onClick={signIn}
+                  disabled={isAuthenticating}
+                  variant="outline"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all w-full mt-2"
+                >
+                  {isAuthenticating ? "Signing..." : "Sign In"}
+                </Button>
+              ) : (
+                <div className="flex flex-col gap-2 mt-2">
+                  <span className="text-white text-sm text-center">
+                    {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                  </span>
+                  <Button
+                    onClick={signOut}
+                    variant="outline"
+                    className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:text-white hover:border-white transition-all w-full"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
