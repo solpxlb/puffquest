@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import bs58 from 'bs58';
 import type { User, Session } from '@supabase/supabase-js';
 
 export const useSolanaAuth = () => {
-  const { publicKey, signMessage, connected, disconnect } = useWallet();
+  const wallet = useWallet();
+  const { publicKey, connected, disconnect } = wallet;
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -37,28 +37,8 @@ export const useSolanaAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Generate Sign-In with Solana (SIWS) message following EIP-4361 standard
-  const generateSIWSMessage = (walletAddress: string): string => {
-    const domain = window.location.host;
-    const origin = window.location.origin;
-    const statement = 'Sign in to Puff Quest with your Solana wallet';
-    const issuedAt = new Date().toISOString();
-    const nonce = Math.random().toString(36).substring(2, 15);
-
-    return `${domain} wants you to sign in with your Solana account:
-${walletAddress}
-
-${statement}
-
-URI: ${origin}
-Version: 1
-Chain ID: mainnet
-Nonce: ${nonce}
-Issued At: ${issuedAt}`;
-  };
-
   const signIn = async () => {
-    if (!publicKey || !signMessage) {
+    if (!publicKey || !wallet.connected || !wallet.signIn) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet first.",
@@ -70,26 +50,26 @@ Issued At: ${issuedAt}`;
     setIsAuthenticating(true);
 
     try {
-      const walletAddress = publicKey.toBase58();
-      
-      // Generate SIWS message
-      const message = generateSIWSMessage(walletAddress);
-      const messageBytes = new TextEncoder().encode(message);
+      // Create a wrapper that ensures proper type compatibility
+      const walletAdapter = {
+        ...wallet,
+        signIn: async (input?: any) => {
+          const result = await wallet.signIn!(input);
+          // Ensure we return an array of SolanaSignInOutput
+          return Array.isArray(result) ? result : [result];
+        }
+      };
 
-      // Request signature from wallet
-      const signature = await signMessage(messageBytes);
-      const signatureBase58 = bs58.encode(signature);
-
-      // Authenticate with Supabase using Web3 provider
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'web3',
-        token: signatureBase58,
-        nonce: walletAddress,
+      const { data, error } = await supabase.auth.signInWithWeb3({
+        chain: 'solana',
+        statement: 'I accept the Terms of Service and sign in to Puff Quest with my Solana wallet',
+        wallet: walletAdapter as any,
       });
 
       if (error) throw error;
 
       if (data.session) {
+        const walletAddress = publicKey.toBase58();
         toast({
           title: "Authentication successful",
           description: `Welcome, ${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`,
