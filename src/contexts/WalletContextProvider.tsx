@@ -7,6 +7,8 @@ import { clusterApiUrl } from '@solana/web3.js';
 // Import Solana wallet adapter default styles
 import '@solana/wallet-adapter-react-ui/styles.css';
 
+// Wallet adapters configured for Phantom and Solflare
+
 interface WalletContextProviderProps {
   children: ReactNode;
 }
