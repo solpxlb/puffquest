@@ -158,7 +158,7 @@ const Play = () => {
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Choose Your Vice...
+              Choose Your Vice
             </h1>
             <p className="text-muted-foreground text-lg">
               (Degenerates Can Choose Multiple Vices)
@@ -207,15 +207,11 @@ const Play = () => {
             })}
           </div>
 
-          {/* Total Display */}
-          <div className="text-center mb-8">
+          {/* Total and Continue Button */}
+          <div className="flex items-center justify-center gap-8">
             <p className="text-3xl font-bold">
               Total: {totalAmount.toFixed(1)} SOL
             </p>
-          </div>
-
-          {/* Continue Button */}
-          <div className="flex justify-center">
             <Button
               size="lg"
               onClick={handleContinue}
