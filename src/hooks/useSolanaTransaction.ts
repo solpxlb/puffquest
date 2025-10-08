@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL, SendTransactionError } from "@solana/web3.js";
 import { supabase } from "@/integrations/supabase/client";
+import bs58 from "bs58";
 
 export const useSolanaTransaction = () => {
   const { publicKey, signTransaction } = useWallet();
@@ -51,9 +52,36 @@ export const useSolanaTransaction = () => {
 
       // Sign transaction
       const signedTransaction = await signTransaction(transaction);
+      
+      // Compute signature for logging and error handling
+      const signature = bs58.encode(signedTransaction.signature!);
+      console.log("Transaction signature:", signature);
+      console.log("Recent blockhash:", blockhash);
 
-      // Send transaction
-      const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+      try {
+        // Send transaction
+        await connection.sendRawTransaction(signedTransaction.serialize());
+      } catch (sendError: any) {
+        // If transaction was already processed, confirm and return signature
+        if (sendError instanceof SendTransactionError && 
+            sendError.message?.includes("already been processed")) {
+          console.log("Transaction already processed, confirming:", signature);
+          
+          // Get full logs for debugging
+          const logs = await sendError.getLogs(connection);
+          console.log("Transaction logs:", logs);
+          
+          // Confirm the transaction
+          await connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight,
+          });
+          
+          return signature;
+        }
+        throw sendError;
+      }
 
       // Confirm transaction
       await connection.confirmTransaction({
