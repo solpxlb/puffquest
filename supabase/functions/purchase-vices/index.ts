@@ -94,12 +94,26 @@ serve(async (req) => {
     const connection = new Connection(heliusRpc, 'confirmed');
     
     console.log('Fetching transaction from blockchain...');
-    const transaction = await connection.getTransaction(transactionSignature, {
-      maxSupportedTransactionVersion: 0,
-    });
+    
+    // Retry logic to handle race conditions with transaction confirmation
+    let transaction = null;
+    let attempts = 0;
+    const maxAttempts = 6;
+    
+    while (!transaction && attempts < maxAttempts) {
+      attempts++;
+      transaction = await connection.getTransaction(transactionSignature, {
+        maxSupportedTransactionVersion: 0,
+      });
+      
+      if (!transaction && attempts < maxAttempts) {
+        console.log(`Transaction not found yet, retry ${attempts}/${maxAttempts}...`);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
 
     if (!transaction) {
-      console.error('Transaction not found on-chain');
+      console.error('Transaction not found on-chain after retries');
       return new Response(
         JSON.stringify({ error: 'Transaction not found on blockchain' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

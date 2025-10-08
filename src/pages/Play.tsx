@@ -4,6 +4,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useSolanaTransaction } from "@/hooks/useSolanaTransaction";
+import { useSolanaAuth } from "@/hooks/useSolanaAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -42,6 +43,7 @@ const Play = () => {
   const [selectedVices, setSelectedVices] = useState<Vice[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { connected, publicKey } = useWallet();
+  const { session, signIn, isAuthenticating } = useSolanaAuth();
   const { sendSol } = useSolanaTransaction();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -76,6 +78,19 @@ const Play = () => {
     setIsProcessing(true);
 
     try {
+      // Ensure user has a Supabase session/profile
+      if (!session) {
+        toast({
+          title: "Authenticating",
+          description: "Signing in with your wallet...",
+        });
+        
+        await signIn();
+        
+        // Wait a moment for the session to be established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
       // Step 1: Send SOL transaction
       toast({
         title: "Processing Transaction",
