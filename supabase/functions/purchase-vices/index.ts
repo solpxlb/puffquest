@@ -20,23 +20,34 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get authenticated user
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    // Parse request body
+    const { viceTypes, transactionSignature, walletAddress } = await req.json();
 
-    if (authError || !user) {
-      console.error('Auth error:', authError);
+    if (!walletAddress) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Wallet address required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse request body
-    const { viceTypes, transactionSignature } = await req.json();
+    // Get user by wallet address
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('id, wallet_address, vices')
+      .eq('wallet_address', walletAddress)
+      .single();
 
-    console.log('Processing purchase:', { userId: user.id, viceTypes, transactionSignature });
+    if (profileError || !profile) {
+      console.error('Profile lookup error:', profileError);
+      return new Response(
+        JSON.stringify({ error: 'User profile not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const user = { id: profile.id };
+
+    console.log('Processing purchase:', { userId: user.id, walletAddress, viceTypes, transactionSignature });
 
     // Validate input
     if (!Array.isArray(viceTypes) || viceTypes.length === 0) {
@@ -101,21 +112,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Transaction failed on blockchain' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get user's profile to verify wallet address
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('wallet_address, vices')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile) {
-      console.error('Profile not found');
-      return new Response(
-        JSON.stringify({ error: 'User profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

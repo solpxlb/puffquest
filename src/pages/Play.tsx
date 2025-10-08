@@ -94,6 +94,7 @@ const Play = () => {
         body: {
           viceTypes: selectedVices,
           transactionSignature: signature,
+          walletAddress: publicKey.toString(),
         },
       });
 

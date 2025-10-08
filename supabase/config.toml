@@ -4,7 +4,7 @@ project_id = "xgisixdxffyvwsfsnjsu"
 enabled = true
 
 [functions.purchase-vices]
-verify_jwt = true
+verify_jwt = false
 
 [functions.get-team-wallet]
 verify_jwt = false
