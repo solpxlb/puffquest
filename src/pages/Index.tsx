@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import HowToPlay from "@/components/HowToPlay";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
+import { Twitter } from "lucide-react";
 
 
 const Index = () => {
@@ -34,12 +35,23 @@ const Index = () => {
               <p className="text-white text-lg sm:text-xl lg:text-2xl font-medium">
                 Money for nothing. Puffs for free.
               </p>
-              <button 
-                onClick={() => navigate('/play')}
-                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all px-8 py-3 text-lg sm:text-xl font-bold uppercase tracking-wider"
-              >
-                Start Now
-              </button>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => navigate('/play')}
+                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all px-8 py-3 text-lg sm:text-xl font-bold uppercase tracking-wider"
+                >
+                  Start Now
+                </button>
+                <a
+                  href="https://x.com/puffquest"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all p-3 flex items-center justify-center"
+                  aria-label="Follow us on X"
+                >
+                  <Twitter className="w-6 h-6 sm:w-7 sm:h-7" />
+                </a>
+              </div>
             </div>
 
             {/* Right Character Image */}
