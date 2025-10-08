@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.get-team-wallet]
 verify_jwt = false
+
+[functions.get-rpc-url]
+verify_jwt = false

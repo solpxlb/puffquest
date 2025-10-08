@@ -3,8 +3,6 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { supabase } from "@/integrations/supabase/client";
 
-const HELIUS_RPC = "https://devnet.helius-rpc.com/?api-key=9ec1f6b1-3f12-4df2-bc6e-93e5f29ec45a";
-
 export const useSolanaTransaction = () => {
   const { publicKey, signTransaction } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +15,13 @@ export const useSolanaTransaction = () => {
     setIsLoading(true);
 
     try {
+      // Get RPC URL from edge function
+      const { data: rpcData, error: rpcError } = await supabase.functions.invoke("get-rpc-url");
+      
+      if (rpcError || !rpcData?.rpcUrl) {
+        throw new Error("Failed to get RPC URL");
+      }
+
       // Get team wallet address from edge function
       const { data: walletData, error: walletError } = await supabase.functions.invoke("get-team-wallet");
       
@@ -24,7 +29,7 @@ export const useSolanaTransaction = () => {
         throw new Error("Failed to get team wallet address");
       }
 
-      const connection = new Connection(HELIUS_RPC, "confirmed");
+      const connection = new Connection(rpcData.rpcUrl, "confirmed");
       const teamWalletAddress = new PublicKey(walletData.teamWallet);
 
       // Convert SOL to lamports
