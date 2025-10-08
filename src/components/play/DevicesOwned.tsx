@@ -177,7 +177,7 @@ export const DevicesOwned = () => {
           return (
             <div
               key={deviceType}
-              className={`bg-secondary rounded-lg border-2 p-6 transition-all ${
+              className={`bg-black rounded-lg border-2 p-6 transition-all ${
                 isOwned
                   ? "border-border hover:border-muted"
                   : "border-muted opacity-75"
