@@ -19,6 +19,15 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Content */}
             <div className="text-left space-y-6 lg:space-y-8 z-10">
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/30 rounded-full px-4 py-2 backdrop-blur-sm">
+                <span className="text-white text-sm sm:text-base font-semibold uppercase tracking-wide">
+                  BETA
+                </span>
+                <span className="text-white/60">•</span>
+                <span className="text-white/90 text-xs sm:text-sm">
+                  Live on Solana Devnet
+                </span>
+              </div>
               <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight uppercase">
                 Enter the World of<br />Smokernomics
               </h1>
