@@ -32,6 +32,13 @@ const calculateUpgradeCost = (currentLevel: number): number => {
   return 0.2 + currentLevel * 0.1;
 };
 
+const getDeviceImage = (deviceType: DeviceType, level: number): string => {
+  if (deviceType === "vape" && level > 0) {
+    return `https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/vape/level${level}vape.png`;
+  }
+  return DEVICE_CONFIG[deviceType].image;
+};
+
 export const DevicesOwned = () => {
   const { publicKey } = useWallet();
   const { toast } = useToast();
@@ -179,7 +186,7 @@ export const DevicesOwned = () => {
               {/* Device Image */}
               <div className="flex justify-center mb-4">
                 <img
-                  src={config.image}
+                  src={getDeviceImage(deviceType, level)}
                   alt={config.name}
                   className={`w-24 h-24 object-contain ${
                     !isOwned ? "grayscale opacity-50" : ""
