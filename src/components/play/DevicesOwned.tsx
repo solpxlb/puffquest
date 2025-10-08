@@ -36,6 +36,9 @@ const getDeviceImage = (deviceType: DeviceType, level: number): string => {
   if (deviceType === "vape" && level > 0) {
     return `https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Vape/level${level}vape.svg`;
   }
+  if (deviceType === "cigarette" && level > 0) {
+    return `https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cigs/level${level}cig.svg`;
+  }
   return DEVICE_CONFIG[deviceType].image;
 };
 
