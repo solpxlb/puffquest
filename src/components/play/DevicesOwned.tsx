@@ -16,15 +16,15 @@ interface DeviceLevels {
 const DEVICE_CONFIG = {
   vape: {
     name: "VAPE",
-    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/vape.png",
+    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Vape.png",
   },
   cigarette: {
     name: "CIGARETTE",
-    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/cigarette.png",
+    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cig.png",
   },
   cigar: {
     name: "CIGAR",
-    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/cigar.png",
+    image: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cigar.png",
   },
 };
 
