@@ -37,6 +37,26 @@ export const useSolanaAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Ensure wallet address is populated when session is restored
+  useEffect(() => {
+    if (session?.user?.id && publicKey) {
+      setTimeout(() => {
+        ensureProfileWalletAddress(session.user.id, publicKey.toBase58());
+      }, 0);
+    }
+  }, [session?.user?.id, publicKey]);
+
+  const ensureProfileWalletAddress = async (userId: string, walletAddress: string) => {
+    try {
+      await supabase.from('profiles').upsert(
+        { id: userId, wallet_address: walletAddress },
+        { onConflict: 'id' }
+      );
+    } catch (error) {
+      console.error('Failed to update profile wallet address:', error);
+    }
+  };
+
   const signIn = async () => {
     if (!publicKey || !wallet.connected || !wallet.signIn) {
       toast({
@@ -68,8 +88,14 @@ export const useSolanaAuth = () => {
 
       if (error) throw error;
 
-      if (data.session) {
+      if (data.session && publicKey) {
         const walletAddress = publicKey.toBase58();
+        
+        // Defer profile update to avoid auth state deadlock
+        setTimeout(() => {
+          ensureProfileWalletAddress(data.session.user.id, walletAddress);
+        }, 0);
+        
         toast({
           title: "Authentication successful",
           description: `Welcome, ${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`,
