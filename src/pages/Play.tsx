@@ -8,6 +8,7 @@ import { PurchaseGate } from "@/components/play/PurchaseGate";
 import { CameraTracker } from "@/components/play/CameraTracker";
 import { SessionStats } from "@/components/play/SessionStats";
 import { LifetimeStats } from "@/components/play/LifetimeStats";
+import { DevicesOwned } from "@/components/play/DevicesOwned";
 import { SessionsTable } from "@/components/play/SessionsTable";
 
 const Play = () => {
@@ -199,6 +200,9 @@ const Play = () => {
               />
               <LifetimeStats />
             </div>
+
+            {/* Devices Owned */}
+            <DevicesOwned />
 
             {/* Sessions Table */}
             <SessionsTable />

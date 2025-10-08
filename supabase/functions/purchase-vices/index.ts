@@ -33,7 +33,7 @@ serve(async (req) => {
     // Get user by wallet address
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('id, wallet_address, vices')
+      .select('id, wallet_address, vices, device_levels')
       .eq('wallet_address', walletAddress)
       .single();
 
@@ -172,9 +172,22 @@ serve(async (req) => {
     const currentVices = profile.vices || [];
     const newVices = Array.from(new Set([...currentVices, ...viceTypes]));
 
+    // Initialize device_levels for purchased vices (set to level 1 if not already owned)
+    const currentDeviceLevels = profile.device_levels || { vape: 0, cigarette: 0, cigar: 0 };
+    const updatedDeviceLevels = { ...currentDeviceLevels };
+    
+    viceTypes.forEach((vice: string) => {
+      if (updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] === 0) {
+        updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] = 1;
+      }
+    });
+
     const { error: updateError } = await supabaseClient
       .from('profiles')
-      .update({ vices: newVices })
+      .update({ 
+        vices: newVices,
+        device_levels: updatedDeviceLevels
+      })
       .eq('id', user.id);
 
     if (updateError) {

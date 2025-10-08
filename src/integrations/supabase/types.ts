@@ -17,6 +17,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          device_levels: Json
           id: string
           updated_at: string
           vices: string[] | null
@@ -24,6 +25,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_levels?: Json
           id: string
           updated_at?: string
           vices?: string[] | null
@@ -31,6 +33,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_levels?: Json
           id?: string
           updated_at?: string
           vices?: string[] | null
