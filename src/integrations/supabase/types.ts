@@ -38,6 +38,77 @@ export type Database = {
         }
         Relationships: []
       }
+      puff_events: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          detected_at: string
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puff_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "puff_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      puff_sessions: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          points_earned: number
+          puff_count: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          points_earned?: number
+          puff_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          points_earned?: number
+          puff_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vice_purchases: {
         Row: {
           created_at: string

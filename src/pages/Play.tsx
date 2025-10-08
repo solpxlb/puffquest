@@ -1,152 +1,148 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useSolanaTransaction } from "@/hooks/useSolanaTransaction";
-import { useSolanaAuth } from "@/hooks/useSolanaAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-type Vice = "vape" | "cigarette" | "cigar";
-
-interface ViceCard {
-  id: Vice;
-  name: string;
-  imageUrl: string;
-  price: number;
-}
-
-const VICES: ViceCard[] = [
-  {
-    id: "vape",
-    name: "Vape",
-    imageUrl: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Vape.png",
-    price: 0.2,
-  },
-  {
-    id: "cigarette",
-    name: "Cigarette",
-    imageUrl: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cig.png",
-    price: 0.2,
-  },
-  {
-    id: "cigar",
-    name: "Cigar",
-    imageUrl: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cigar.png",
-    price: 0.2,
-  },
-];
+import { PurchaseGate } from "@/components/play/PurchaseGate";
+import { CameraTracker } from "@/components/play/CameraTracker";
+import { SessionStats } from "@/components/play/SessionStats";
+import { LifetimeStats } from "@/components/play/LifetimeStats";
+import { SessionsTable } from "@/components/play/SessionsTable";
 
 const Play = () => {
-  const [selectedVices, setSelectedVices] = useState<Vice[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
   const { connected, publicKey } = useWallet();
-  const { session, signIn, isAuthenticating } = useSolanaAuth();
-  const { sendSol } = useSolanaTransaction();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessionStats, setSessionStats] = useState({
+    puffCount: 0,
+    points: 0,
+    duration: 0,
+  });
 
-  const toggleVice = (vice: Vice) => {
-    setSelectedVices((prev) =>
-      prev.includes(vice) ? prev.filter((v) => v !== vice) : [...prev, vice]
-    );
-  };
-
-  const totalAmount = selectedVices.length * 0.2;
-
-  const handleContinue = async () => {
-    if (!connected || !publicKey) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedVices.length === 0) {
-      toast({
-        title: "No Vice Selected",
-        description: "Please select at least one vice to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      // Ensure user has a Supabase session/profile
-      if (!session) {
-        toast({
-          title: "Authenticating",
-          description: "Signing in with your wallet...",
-        });
-        
-        await signIn();
-        
-        // Wait a moment for the session to be established
-        await new Promise(resolve => setTimeout(resolve, 1000));
+  // Check if user has purchased vices
+  useEffect(() => {
+    const checkPurchaseStatus = async () => {
+      if (!publicKey) {
+        setIsLoading(false);
+        return;
       }
 
-      // Step 1: Send SOL transaction
-      toast({
-        title: "Processing Transaction",
-        description: "Sending transaction...",
-      });
+      const { data } = await supabase
+        .from("vice_purchases")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
 
-      const signature = await sendSol(totalAmount);
+      setHasPurchased(!!data);
+      setIsLoading(false);
+    };
 
-      // Step 2: Verify transaction via edge function
-      toast({
-        title: "Verifying Transaction",
-        description: "Please wait while we verify your purchase...",
-      });
+    checkPurchaseStatus();
+  }, [publicKey]);
 
-      const { data, error } = await supabase.functions.invoke("purchase-vices", {
-        body: {
-          viceTypes: selectedVices,
-          transactionSignature: signature,
-          walletAddress: publicKey.toString(),
-        },
-      });
+  // Session timer
+  useEffect(() => {
+    if (!isSessionActive) return;
+
+    const timer = setInterval(() => {
+      setSessionStats((prev) => ({
+        ...prev,
+        duration: prev.duration + 1,
+      }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isSessionActive]);
+
+  const handleStartSession = async () => {
+    if (!publicKey) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("puff_sessions")
+        .insert({
+          user_id: publicKey.toString(),
+          puff_count: 0,
+          points_earned: 0,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Step 3: Show success
-      toast({
-        title: "Purchase Successful! 🎉",
-        description: (
-          <div className="flex flex-col gap-2">
-            <p>Your vices have been added to your profile.</p>
-            <a
-              href={`https://explorer.solana.com/tx/${signature}?cluster=devnet`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              View on Solscan
-            </a>
-          </div>
-        ),
-      });
+      setCurrentSessionId(data.id);
+      setIsSessionActive(true);
+      setSessionStats({ puffCount: 0, points: 0, duration: 0 });
 
-      // Step 4: Redirect after success
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-    } catch (error: any) {
-      console.error("Purchase error:", error);
       toast({
-        title: "Transaction Failed",
-        description: error.message || "Something went wrong. Please try again.",
+        title: "Session Started",
+        description: "Start smoking to earn points!",
+      });
+    } catch (error) {
+      console.error("Error starting session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start session. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
+  };
+
+  const handleEndSession = async () => {
+    if (!currentSessionId) return;
+
+    try {
+      const { error } = await supabase
+        .from("puff_sessions")
+        .update({
+          ended_at: new Date().toISOString(),
+          puff_count: sessionStats.puffCount,
+          points_earned: sessionStats.points,
+          duration_seconds: sessionStats.duration,
+        })
+        .eq("id", currentSessionId);
+
+      if (error) throw error;
+
+      setIsSessionActive(false);
+      setCurrentSessionId(null);
+
+      toast({
+        title: "Session Ended",
+        description: `You earned ${sessionStats.points} points from ${sessionStats.puffCount} puffs!`,
+      });
+    } catch (error) {
+      console.error("Error ending session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to end session properly.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePuffDetected = async () => {
+    if (!currentSessionId || !isSessionActive) return;
+
+    const newPuffCount = sessionStats.puffCount + 1;
+    const newPoints = sessionStats.points + 20; // 20 points per puff
+
+    setSessionStats((prev) => ({
+      ...prev,
+      puffCount: newPuffCount,
+      points: newPoints,
+    }));
+
+    // Record puff event
+    await supabase.from("puff_events").insert({
+      session_id: currentSessionId,
+      user_id: publicKey?.toString(),
+      confidence_score: 0.95,
+    });
   };
 
   if (!connected) {
@@ -166,80 +162,48 @@ const Play = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
+        <Navbar />
+        <main className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[80vh]">
+          <p className="text-2xl text-muted-foreground">Loading...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
       <Navbar />
       <main className="container mx-auto px-4 py-24 md:py-32">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Choose Your Vice
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              (Degenerates Can Choose Multiple Vices)
-            </p>
-          </div>
+        {!hasPurchased ? (
+          <PurchaseGate onPurchaseComplete={() => setHasPurchased(true)} />
+        ) : (
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* Camera Tracker */}
+            <CameraTracker
+              onPuffDetected={handlePuffDetected}
+              isActive={isSessionActive}
+              onStartSession={handleStartSession}
+              onEndSession={handleEndSession}
+            />
 
-          {/* Vice Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {VICES.map((vice) => {
-              const isSelected = selectedVices.includes(vice.id);
-              return (
-                <button
-                  key={vice.id}
-                  onClick={() => toggleVice(vice.id)}
-                  disabled={isProcessing}
-                  className={`
-                    group relative overflow-hidden rounded-lg p-6 
-                    transition-all duration-300 transform hover:scale-105
-                    border-2 bg-card/50 backdrop-blur-sm
-                    ${
-                      isSelected
-                        ? "border-primary shadow-lg shadow-primary/50"
-                        : "border-border hover:border-primary/50"
-                    }
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  `}
-                >
-                  <div className="aspect-square mb-4 flex items-center justify-center">
-                    <img
-                      src={vice.imageUrl}
-                      alt={vice.name}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">{vice.name}</h3>
-                  <p className="text-primary text-xl font-semibold">
-                    {vice.price} SOL
-                  </p>
-                  {isSelected && (
-                    <div className="absolute top-4 right-4 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center">
-                      ✓
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SessionStats
+                puffCount={sessionStats.puffCount}
+                points={sessionStats.points}
+                duration={sessionStats.duration}
+              />
+              <LifetimeStats />
+            </div>
 
-          {/* Total and Continue Button */}
-          <div className="flex items-center justify-center gap-8">
-            <p className="text-3xl font-bold">
-              Total: {totalAmount.toFixed(1)} SOL
-            </p>
-            <Button
-              size="lg"
-              onClick={handleContinue}
-              disabled={selectedVices.length === 0 || isProcessing}
-              className="text-xl px-12 py-6 h-auto"
-            >
-              {isProcessing
-                ? "Processing..."
-                : `Continue & Pay ${totalAmount.toFixed(1)} SOL`}
-            </Button>
+            {/* Sessions Table */}
+            <SessionsTable />
           </div>
-        </div>
+        )}
       </main>
       <Footer />
     </div>
