@@ -34,7 +34,7 @@ const calculateUpgradeCost = (currentLevel: number): number => {
 
 const getDeviceImage = (deviceType: DeviceType, level: number): string => {
   if (deviceType === "vape" && level > 0) {
-    return `https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/vape/level${level}vape.png`;
+    return `https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/vape/level${level}vape.svg`;
   }
   return DEVICE_CONFIG[deviceType].image;
 };
