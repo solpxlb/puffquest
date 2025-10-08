@@ -1,9 +1,12 @@
 import Navbar from "@/components/Navbar";
 import HowToPlay from "@/components/HowToPlay";
 import Footer from "@/components/Footer";
+import { useNavigate } from "react-router-dom";
 
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -22,7 +25,10 @@ const Index = () => {
               <p className="text-white text-lg sm:text-xl lg:text-2xl font-medium">
                 Money for nothing. Puffs for free.
               </p>
-              <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all px-8 py-3 text-lg sm:text-xl font-bold uppercase tracking-wider">
+              <button 
+                onClick={() => navigate('/play')}
+                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all px-8 py-3 text-lg sm:text-xl font-bold uppercase tracking-wider"
+              >
                 Start Now
               </button>
             </div>

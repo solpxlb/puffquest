@@ -1,6 +1,9 @@
 import { Gamepad2, Coins, Trophy, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const HowToPlay = () => {
+  const navigate = useNavigate();
+  
   const steps = [
     {
       icon: Gamepad2,
@@ -64,7 +67,10 @@ const HowToPlay = () => {
 
         {/* CTA Button */}
         <div className="text-center">
-          <button className="bg-white text-black hover:bg-gray-200 transition-all px-12 py-4 text-lg sm:text-xl font-bold uppercase tracking-wider">
+          <button 
+            onClick={() => navigate('/play')}
+            className="bg-white text-black hover:bg-gray-200 transition-all px-12 py-4 text-lg sm:text-xl font-bold uppercase tracking-wider"
+          >
             Enter the Game
           </button>
         </div>
