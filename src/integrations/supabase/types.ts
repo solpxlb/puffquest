@@ -184,11 +184,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "vice_purchases_user_id_fkey"
+            foreignKeyName: "vice_purchases_wallet_address_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["wallet_address"]
           },
         ]
       }
