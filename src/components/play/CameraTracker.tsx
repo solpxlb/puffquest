@@ -18,6 +18,7 @@ export const CameraTracker = ({
   onEndSession,
 }: CameraTrackerProps) => {
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [cameraInitializing, setCameraInitializing] = useState(false);
   const [error, setError] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -30,6 +31,7 @@ export const CameraTracker = ({
   });
 
   const enableCamera = async () => {
+    setCameraInitializing(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
@@ -38,12 +40,23 @@ export const CameraTracker = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        
+        // Ensure video starts playing
+        try {
+          await videoRef.current.play();
+        } catch (playError) {
+          console.warn("Video autoplay blocked:", playError);
+        }
+        
         setCameraEnabled(true);
         setError("");
       }
     } catch (err) {
       console.error("Camera access error:", err);
       setError("Unable to access camera. Please grant camera permissions.");
+      throw err;
+    } finally {
+      setCameraInitializing(false);
     }
   };
 
@@ -64,9 +77,13 @@ export const CameraTracker = ({
     };
   }, []);
 
-  const handleStartTracking = () => {
+  const handleStartTracking = async () => {
     if (!cameraEnabled) {
-      enableCamera();
+      try {
+        await enableCamera();
+      } catch (err) {
+        return;
+      }
     }
     onStartSession();
   };
@@ -108,10 +125,11 @@ export const CameraTracker = ({
             <Button
               onClick={handleStartTracking}
               size="lg"
-              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 uppercase font-bold"
+              disabled={cameraInitializing}
+              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 uppercase font-bold disabled:opacity-50"
             >
               <Play className="w-5 h-5 mr-2" />
-              Start Tracking
+              {cameraInitializing ? "Initializing Camera..." : "Start Tracking"}
             </Button>
           ) : (
             <Button
