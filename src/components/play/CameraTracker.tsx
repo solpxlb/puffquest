@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Play, Square } from "lucide-react";
+import { usePuffDetection } from "@/hooks/usePuffDetection";
+import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
 
 interface CameraTrackerProps {
-  onPuffDetected: () => void;
+  onPuffDetected: (analysis: PuffAnalysis) => void;
   isActive: boolean;
   onStartSession: () => void;
   onEndSession: () => void;
@@ -19,6 +21,13 @@ export const CameraTracker = ({
   const [error, setError] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // AI Puff Detection Hook
+  usePuffDetection({
+    videoRef,
+    isActive,
+    onPuffDetected,
+  });
 
   const enableCamera = async () => {
     try {

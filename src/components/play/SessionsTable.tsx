@@ -18,15 +18,34 @@ export const SessionsTable = () => {
     const fetchSessions = async () => {
       if (!publicKey) return;
 
-      const { data } = await supabase
+      const { data: sessionsData } = await supabase
         .from("puff_sessions")
-        .select("id, started_at, puff_count, points_earned, duration_seconds")
+        .select("id, started_at, duration_seconds")
+        .eq("user_id", publicKey.toString())
         .order("started_at", { ascending: false })
         .limit(10);
 
-      if (data) {
-        setSessions(data);
-      }
+      if (!sessionsData) return;
+
+      // For each session, get puff events to calculate stats
+      const sessionsWithStats = await Promise.all(
+        sessionsData.map(async (session) => {
+          const { data: events } = await supabase
+            .from("puff_events")
+            .select("points_awarded")
+            .eq("session_id", session.id);
+
+          return {
+            id: session.id,
+            started_at: session.started_at,
+            puff_count: events?.length || 0,
+            points_earned: events?.reduce((sum, e) => sum + (e.points_awarded || 20), 0) || 0,
+            duration_seconds: session.duration_seconds,
+          };
+        })
+      );
+
+      setSessions(sessionsWithStats);
     };
 
     fetchSessions();

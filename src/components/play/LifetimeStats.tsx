@@ -15,18 +15,18 @@ export const LifetimeStats = () => {
     const fetchLifetimeStats = async () => {
       if (!publicKey) return;
 
-      const { data: sessions } = await supabase
-        .from("puff_sessions")
-        .select("puff_count, points_earned, started_at")
-        .order("started_at", { ascending: false });
+      const { data: events } = await supabase
+        .from("puff_events")
+        .select("points_awarded, detected_at")
+        .eq("user_id", publicKey.toString());
 
-      if (sessions) {
-        const totalPuffs = sessions.reduce((sum, s) => sum + s.puff_count, 0);
-        const totalPoints = sessions.reduce((sum, s) => sum + s.points_earned, 0);
+      if (events) {
+        const totalPuffs = events.length;
+        const totalPoints = events.reduce((sum, e) => sum + (e.points_awarded || 20), 0);
         
         // Calculate unique days
         const uniqueDays = new Set(
-          sessions.map((s) => new Date(s.started_at).toDateString())
+          events.map((e) => new Date(e.detected_at).toDateString())
         ).size;
 
         setStats({

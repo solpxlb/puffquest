@@ -10,6 +10,7 @@ import { SessionStats } from "@/components/play/SessionStats";
 import { LifetimeStats } from "@/components/play/LifetimeStats";
 import { DevicesOwned } from "@/components/play/DevicesOwned";
 import { SessionsTable } from "@/components/play/SessionsTable";
+import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
 
 const Play = () => {
   const { connected, publicKey } = useWallet();
@@ -97,12 +98,22 @@ const Play = () => {
     if (!currentSessionId) return;
 
     try {
+      // Get final stats from puff_events
+      const { data: events } = await supabase
+        .from("puff_events")
+        .select("points_awarded")
+        .eq("session_id", currentSessionId);
+
+      const finalPuffCount = events?.length || 0;
+      const finalPoints = events?.reduce((sum, e) => sum + (e.points_awarded || 20), 0) || 0;
+
+      // Update session with aggregated stats
       const { error } = await supabase
         .from("puff_sessions")
         .update({
           ended_at: new Date().toISOString(),
-          puff_count: sessionStats.puffCount,
-          points_earned: sessionStats.points,
+          puff_count: finalPuffCount,
+          points_earned: finalPoints,
           duration_seconds: sessionStats.duration,
         })
         .eq("id", currentSessionId);
@@ -114,7 +125,7 @@ const Play = () => {
 
       toast({
         title: "Session Ended",
-        description: `You earned ${sessionStats.points} points from ${sessionStats.puffCount} puffs!`,
+        description: `You earned ${finalPoints} points from ${finalPuffCount} puffs!`,
       });
     } catch (error) {
       console.error("Error ending session:", error);
@@ -126,24 +137,47 @@ const Play = () => {
     }
   };
 
-  const handlePuffDetected = async () => {
-    if (!currentSessionId || !isSessionActive) return;
+  const handlePuffDetected = async (puffAnalysis: PuffAnalysis) => {
+    if (!currentSessionId || !isSessionActive || !publicKey) return;
 
-    const newPuffCount = sessionStats.puffCount + 1;
-    const newPoints = sessionStats.points + 20; // 20 points per puff
+    try {
+      const { error } = await supabase
+        .from("puff_events")
+        .insert({
+          session_id: currentSessionId,
+          user_id: publicKey.toString(),
+          confidence_score: puffAnalysis.confidence,
+          mouth_height: puffAnalysis.metrics.mouthHeight,
+          mouth_width: puffAnalysis.metrics.mouthWidth,
+          aspect_ratio: puffAnalysis.metrics.aspectRatio,
+          lip_pursing: puffAnalysis.metrics.lipPursing,
+          cheek_puff: puffAnalysis.metrics.cheekPuff,
+          mouth_pucker: puffAnalysis.metrics.mouthPucker,
+          jaw_open: puffAnalysis.metrics.jawOpen,
+          max_aspect_ratio: parseFloat(puffAnalysis.details.maxAspectRatio),
+          max_pursing: parseFloat(puffAnalysis.details.maxPursing),
+          max_cheek_puff: parseFloat(puffAnalysis.details.maxCheekPuff),
+          max_mouth_pucker: parseFloat(puffAnalysis.details.maxMouthPucker),
+          sequence_score: puffAnalysis.details.sequenceScore,
+          detection_reason: puffAnalysis.reason,
+          points_awarded: 20
+        });
 
-    setSessionStats((prev) => ({
-      ...prev,
-      puffCount: newPuffCount,
-      points: newPoints,
-    }));
+      if (error) throw error;
 
-    // Record puff event
-    await supabase.from("puff_events").insert({
-      session_id: currentSessionId,
-      user_id: publicKey?.toString(),
-      confidence_score: 0.95,
-    });
+      setSessionStats((prev) => ({
+        ...prev,
+        puffCount: prev.puffCount + 1,
+        points: prev.points + 20,
+      }));
+
+      toast({
+        title: "Puff Detected!",
+        description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +20 points`,
+      });
+    } catch (error) {
+      console.error("Error recording puff:", error);
+    }
   };
 
   if (!connected) {

@@ -43,26 +43,68 @@ export type Database = {
       }
       puff_events: {
         Row: {
-          confidence_score: number | null
+          aspect_ratio: number | null
+          cheek_puff: number | null
+          confidence_score: number
           created_at: string
           detected_at: string
+          detection_reason: string | null
           id: string
+          jaw_open: number | null
+          lip_pursing: number | null
+          max_aspect_ratio: number | null
+          max_cheek_puff: number | null
+          max_mouth_pucker: number | null
+          max_pursing: number | null
+          mouth_height: number | null
+          mouth_pucker: number | null
+          mouth_width: number | null
+          points_awarded: number | null
+          sequence_score: number | null
           session_id: string
           user_id: string
         }
         Insert: {
-          confidence_score?: number | null
+          aspect_ratio?: number | null
+          cheek_puff?: number | null
+          confidence_score?: number
           created_at?: string
           detected_at?: string
+          detection_reason?: string | null
           id?: string
+          jaw_open?: number | null
+          lip_pursing?: number | null
+          max_aspect_ratio?: number | null
+          max_cheek_puff?: number | null
+          max_mouth_pucker?: number | null
+          max_pursing?: number | null
+          mouth_height?: number | null
+          mouth_pucker?: number | null
+          mouth_width?: number | null
+          points_awarded?: number | null
+          sequence_score?: number | null
           session_id: string
           user_id: string
         }
         Update: {
-          confidence_score?: number | null
+          aspect_ratio?: number | null
+          cheek_puff?: number | null
+          confidence_score?: number
           created_at?: string
           detected_at?: string
+          detection_reason?: string | null
           id?: string
+          jaw_open?: number | null
+          lip_pursing?: number | null
+          max_aspect_ratio?: number | null
+          max_cheek_puff?: number | null
+          max_mouth_pucker?: number | null
+          max_pursing?: number | null
+          mouth_height?: number | null
+          mouth_pucker?: number | null
+          mouth_width?: number | null
+          points_awarded?: number | null
+          sequence_score?: number | null
           session_id?: string
           user_id?: string
         }
