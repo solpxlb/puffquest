@@ -21,11 +21,13 @@ export const CameraTracker = ({
   const [cameraInitializing, setCameraInitializing] = useState(false);
   const [error, setError] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // AI Puff Detection Hook
   usePuffDetection({
     videoRef,
+    canvasRef,
     isActive,
     onPuffDetected,
   });
@@ -107,6 +109,12 @@ export const CameraTracker = ({
           playsInline
           muted
           className={`w-full h-full object-cover ${cameraEnabled ? 'block' : 'hidden'}`}
+        />
+        
+        {/* Canvas overlay for AI visualization */}
+        <canvas
+          ref={canvasRef}
+          className={`absolute inset-0 w-full h-full ${cameraEnabled && isActive ? 'block' : 'hidden'}`}
         />
         
         {/* Placeholder - shown when camera is off */}
