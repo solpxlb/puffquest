@@ -41,6 +41,9 @@ export const CameraTracker = ({
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
+        // Small delay to let video element process the stream
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Ensure video starts playing
         try {
           await videoRef.current.play();
@@ -96,20 +99,22 @@ export const CameraTracker = ({
   return (
     <div className="relative overflow-hidden rounded-lg border-2 border-white bg-gray-900/50 backdrop-blur-sm">
       {/* Video Feed */}
-      <div className="aspect-video w-full flex items-center justify-center bg-black">
-        {cameraEnabled ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className="aspect-video w-full flex items-center justify-center bg-black relative">
+        {/* Video - always in DOM */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full object-cover ${cameraEnabled ? 'block' : 'hidden'}`}
+        />
+        
+        {/* Placeholder - shown when camera is off */}
+        {!cameraEnabled && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
             <CameraOff className="w-16 h-16 text-gray-600" />
             <p className="text-gray-400 text-lg uppercase">
-              Camera Feed Inactive
+              {cameraInitializing ? "Initializing Camera..." : "Camera Feed Inactive"}
             </p>
             {error && (
               <p className="text-red-400 text-sm max-w-md">{error}</p>
