@@ -20,32 +20,20 @@ export const SessionsTable = () => {
 
       const { data: sessionsData } = await supabase
         .from("puff_sessions")
-        .select("id, started_at, duration_seconds")
+        .select("id, started_at, duration_seconds, puff_count, points_earned")
         .eq("user_id", publicKey.toString())
         .order("started_at", { ascending: false })
         .limit(10);
 
       if (!sessionsData) return;
 
-      // For each session, get puff events to calculate stats
-      const sessionsWithStats = await Promise.all(
-        sessionsData.map(async (session) => {
-          const { data: events } = await supabase
-            .from("puff_events")
-            .select("points_awarded")
-            .eq("session_id", session.id);
-
-          return {
-            id: session.id,
-            started_at: session.started_at,
-            puff_count: events?.length || 0,
-            points_earned: events?.reduce((sum, e) => sum + (e.points_awarded || 20), 0) || 0,
-            duration_seconds: session.duration_seconds,
-          };
-        })
-      );
-
-      setSessions(sessionsWithStats);
+      setSessions(sessionsData.map(session => ({
+        id: session.id,
+        started_at: session.started_at,
+        puff_count: session.puff_count,
+        points_earned: session.points_earned,
+        duration_seconds: session.duration_seconds,
+      })));
     };
 
     fetchSessions();

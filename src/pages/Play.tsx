@@ -98,35 +98,26 @@ const Play = () => {
     if (!currentSessionId) return;
 
     try {
-      // Get final stats from puff_events
-      const { data: events } = await supabase
-        .from("puff_events")
-        .select("points_awarded")
-        .eq("session_id", currentSessionId);
-
-      const finalPuffCount = events?.length || 0;
-      const finalPoints = events?.reduce((sum, e) => sum + (e.points_awarded || 20), 0) || 0;
-
-      // Update session with aggregated stats
+      // Update session with current stats
       const { error } = await supabase
         .from("puff_sessions")
         .update({
           ended_at: new Date().toISOString(),
-          puff_count: finalPuffCount,
-          points_earned: finalPoints,
+          puff_count: sessionStats.puffCount,
+          points_earned: sessionStats.points,
           duration_seconds: sessionStats.duration,
         })
         .eq("id", currentSessionId);
 
       if (error) throw error;
 
-      setIsSessionActive(false);
-      setCurrentSessionId(null);
-
       toast({
         title: "Session Ended",
-        description: `You earned ${finalPoints} points from ${finalPuffCount} puffs!`,
+        description: `You earned ${sessionStats.points} points from ${sessionStats.puffCount} puffs!`,
       });
+
+      setIsSessionActive(false);
+      setCurrentSessionId(null);
     } catch (error) {
       console.error("Error ending session:", error);
       toast({
@@ -140,8 +131,21 @@ const Play = () => {
   const handlePuffDetected = async (puffAnalysis: PuffAnalysis) => {
     if (!currentSessionId || !isSessionActive || !publicKey) return;
 
+    // Update stats immediately
+    setSessionStats((prev) => ({
+      ...prev,
+      puffCount: prev.puffCount + 1,
+      points: prev.points + 20,
+    }));
+
+    toast({
+      title: "Puff Detected!",
+      description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +20 points`,
+    });
+
+    // Try to record event for analytics (non-blocking)
     try {
-      const { error } = await supabase
+      await supabase
         .from("puff_events")
         .insert({
           session_id: currentSessionId,
@@ -162,21 +166,8 @@ const Play = () => {
           detection_reason: puffAnalysis.reason,
           points_awarded: 20
         });
-
-      if (error) throw error;
-
-      setSessionStats((prev) => ({
-        ...prev,
-        puffCount: prev.puffCount + 1,
-        points: prev.points + 20,
-      }));
-
-      toast({
-        title: "Puff Detected!",
-        description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +20 points`,
-      });
     } catch (error) {
-      console.error("Error recording puff:", error);
+      console.error("Error recording puff event:", error);
     }
   };
 
