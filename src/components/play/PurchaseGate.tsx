@@ -26,7 +26,7 @@ const VICES: ViceCard[] = [
   {
     id: "cigarette",
     name: "Cigarette",
-    imageUrl: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cig.png",
+    imageUrl: "https://xgisixdxffyvwsfsnjsu.supabase.co/storage/v1/object/public/assets/Cig2.png",
     price: 0.2,
   },
   {
