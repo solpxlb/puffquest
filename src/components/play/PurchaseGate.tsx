@@ -161,14 +161,13 @@ export const PurchaseGate = ({ onPurchaseComplete }: PurchaseGateProps) => {
                 disabled:opacity-50 disabled:cursor-not-allowed
               `}
             >
-              <div className="aspect-square mb-4 flex items-center justify-center">
+              <div className="aspect-square flex items-center justify-center">
                 <img
                   src={vice.imageUrl}
                   alt={vice.name}
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h3 className="text-2xl font-bold mb-2">{vice.name}</h3>
               <p className="text-primary text-xl font-semibold">
                 {vice.price} SOL
               </p>
