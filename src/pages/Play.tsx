@@ -36,6 +36,7 @@ const Play = () => {
       const { data } = await supabase
         .from("vice_purchases")
         .select("id")
+        .eq("user_id", publicKey.toString())
         .limit(1)
         .maybeSingle();
 
