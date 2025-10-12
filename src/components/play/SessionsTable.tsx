@@ -57,9 +57,9 @@ export const SessionsTable = () => {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:block max-h-[400px] overflow-y-auto">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 bg-gray-900 z-10">
             <tr className="bg-gray-900">
               <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Date</th>
               <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Puffs</th>
@@ -94,7 +94,7 @@ export const SessionsTable = () => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="md:hidden divide-y divide-gray-700">
+      <div className="md:hidden divide-y divide-gray-700 max-h-[400px] overflow-y-auto">
         {sessions.length === 0 ? (
           <div className="text-center text-gray-500 p-8">
             No sessions yet. Start tracking to see your history!
