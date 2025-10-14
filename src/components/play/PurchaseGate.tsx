@@ -5,7 +5,6 @@ import { useSolanaTransaction } from "@/hooks/useSolanaTransaction";
 import { useSolanaAuth } from "@/hooks/useSolanaAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useNavigate } from "react-router-dom";
 
 type Vice = "vape" | "cigarette" | "cigar";
 
