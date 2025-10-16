@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useSolanaTransaction } from "@/hooks/useSolanaTransaction";
+import { GameEconomy } from "@/lib/GameEconomy";
+import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { DeviceStatsTable } from "./DeviceStatsTable";
+import { Zap, TrendingUp, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type DeviceType = "vape" | "cigarette" | "cigar";
 
@@ -28,9 +39,6 @@ const DEVICE_CONFIG = {
   },
 };
 
-const calculateUpgradeCost = (currentLevel: number): number => {
-  return 0.2 + currentLevel * 0.1;
-};
 
 const getDeviceImage = (deviceType: DeviceType, level: number): string => {
   if (deviceType === "vape" && level > 0) {
@@ -49,12 +57,17 @@ export const DevicesOwned = () => {
   const { publicKey } = useWallet();
   const { toast } = useToast();
   const { sendSol, isLoading: isTransacting } = useSolanaTransaction();
+  const { globalStats } = useSmokeEconomy();
+  const queryClient = useQueryClient();
   const [deviceLevels, setDeviceLevels] = useState<DeviceLevels>({
     vape: 0,
     cigarette: 0,
     cigar: 0,
   });
+  const [smokeBalance, setSmokeBalance] = useState(0);
+  const [viewingStats, setViewingStats] = useState<DeviceType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -65,7 +78,7 @@ export const DevicesOwned = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("device_levels")
+        .select("device_levels, smoke_balance")
         .eq("wallet_address", publicKey.toString())
         .single();
 
@@ -82,6 +95,7 @@ export const DevicesOwned = () => {
           cigarette: levels.cigarette ?? 0,
           cigar: levels.cigar ?? 0,
         });
+        setSmokeBalance(Number(data.smoke_balance || 0));
       }
       setIsLoading(false);
     };
@@ -126,35 +140,50 @@ export const DevicesOwned = () => {
     if (!publicKey) return;
 
     const currentLevel = deviceLevels[deviceType];
-    const cost = calculateUpgradeCost(currentLevel);
+    const upgradeCost = GameEconomy.getUpgradeCost(currentLevel);
 
+    if (smokeBalance < upgradeCost) {
+      toast({
+        title: "Insufficient $SMOKE",
+        description: `You need ${upgradeCost} $SMOKE to upgrade. You have ${smokeBalance.toFixed(4)} $SMOKE.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpgrading(true);
     try {
-      // Send SOL transaction
-      await sendSol(cost);
-
-      // Upgrade device level
-      const newLevels = { ...deviceLevels, [deviceType]: currentLevel + 1 };
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ device_levels: newLevels })
-        .eq("wallet_address", publicKey.toString());
+      const { data, error } = await supabase.functions.invoke('upgrade-device', {
+        body: { deviceType }
+      });
 
       if (error) throw error;
 
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+
+      // Update local state
+      const newLevels = { ...deviceLevels, [deviceType]: data.newLevel };
       setDeviceLevels(newLevels);
+      setSmokeBalance(data.newBalance);
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
 
       toast({
-        title: "Device Upgraded!",
-        description: `${DEVICE_CONFIG[deviceType].name} is now level ${currentLevel + 1}`,
+        title: "Device Upgraded! 🎉",
+        description: `${DEVICE_CONFIG[deviceType].name} is now level ${data.newLevel}. Spent ${upgradeCost} $SMOKE.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error upgrading device:", error);
       toast({
         title: "Upgrade Failed",
-        description: "Failed to upgrade device. Please try again.",
+        description: error.message || "Failed to upgrade device. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUpgrading(false);
     }
   };
 
@@ -166,19 +195,51 @@ export const DevicesOwned = () => {
     );
   }
 
+  const getDeviceStats = (deviceType: DeviceType, level: number) => {
+    if (level === 0 || !globalStats) return null;
+
+    const deviceLevelsForCalc = { vape: 0, cigarette: 0, cigar: 0, [deviceType]: level };
+    const pointsPerPuff = GameEconomy.calculatePuffPoints(deviceLevelsForCalc, globalStats, true);
+    const passivePerHour = GameEconomy.calculatePassiveIncome(deviceLevelsForCalc, globalStats, 1);
+
+    return {
+      pointsPerPuff: Math.round(pointsPerPuff),
+      passivePerHour: Math.round(passivePerHour),
+    };
+  };
+
   return (
     <div className="bg-card rounded-lg border-t-2 border-foreground p-6">
       <h2 className="text-foreground text-2xl font-bold uppercase border-b-2 border-border pb-3 mb-6">
         MY DEVICES
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        {(Object.keys(DEVICE_CONFIG) as DeviceType[]).map((deviceType) => {
-          const config = DEVICE_CONFIG[deviceType];
-          const level = deviceLevels[deviceType];
-          const isOwned = level > 0;
-          const isMaxLevel = level >= 10;
-          const upgradeCost = calculateUpgradeCost(level);
+      {viewingStats && (
+        <div className="mb-6">
+          <Button
+            onClick={() => setViewingStats(null)}
+            variant="outline"
+            className="mb-4"
+          >
+            ← Back to Devices
+          </Button>
+          <DeviceStatsTable
+            deviceType={viewingStats}
+            currentLevel={deviceLevels[viewingStats]}
+          />
+        </div>
+      )}
+
+      {!viewingStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          {(Object.keys(DEVICE_CONFIG) as DeviceType[]).map((deviceType) => {
+            const config = DEVICE_CONFIG[deviceType];
+            const level = deviceLevels[deviceType];
+            const isOwned = level > 0;
+            const isMaxLevel = level >= 10;
+            const upgradeCost = GameEconomy.getUpgradeCost(level);
+            const stats = getDeviceStats(deviceType, level);
+            const canAffordUpgrade = smokeBalance >= upgradeCost;
 
           return (
             <div
@@ -213,6 +274,24 @@ export const DevicesOwned = () => {
                 {isOwned ? `LEVEL ${level}/10` : "NOT OWNED"}
               </p>
 
+              {/* Device Stats */}
+              {isOwned && stats && (
+                <div className="bg-muted/20 rounded-lg p-3 mb-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Points/Puff
+                    </span>
+                    <span className="text-foreground font-bold">{stats.pointsPerPuff}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> Passive/Hr
+                    </span>
+                    <span className="text-foreground font-bold">{stats.passivePerHour}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Progress Bar */}
               {isOwned && (
                 <div className="w-full bg-background rounded-full h-2 mb-4">
@@ -223,8 +302,8 @@ export const DevicesOwned = () => {
                 </div>
               )}
 
-              {/* Action Button */}
-              <div className="flex flex-col items-center gap-2">
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2">
                 {!isOwned ? (
                   <Button
                     onClick={() => handleBuyDevice(deviceType)}
@@ -236,28 +315,56 @@ export const DevicesOwned = () => {
                   </Button>
                 ) : isMaxLevel ? (
                   <Button disabled className="w-full" variant="secondary">
-                    MAX LEVEL
+                    ⭐ MAX LEVEL
                   </Button>
                 ) : (
                   <>
-                    <Button
-                      onClick={() => handleUpgradeDevice(deviceType)}
-                      disabled={isTransacting}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      UPGRADE
-                    </Button>
-                    <span className="text-muted-foreground text-sm">
-                      {upgradeCost.toFixed(1)} SOL
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={() => handleUpgradeDevice(deviceType)}
+                            disabled={isUpgrading || !canAffordUpgrade}
+                            className="w-full"
+                            variant={canAffordUpgrade ? "default" : "outline"}
+                          >
+                            {!canAffordUpgrade && "🔒 "}
+                            UPGRADE - {upgradeCost === 0 ? "FREE" : `${upgradeCost} $SMOKE`}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {!canAffordUpgrade ? (
+                            <p>Need {(upgradeCost - smokeBalance).toFixed(4)} more $SMOKE</p>
+                          ) : (
+                            <div className="text-xs space-y-1">
+                              <p className="font-bold">Next Level Benefits:</p>
+                              <p>+5 points per puff</p>
+                              <p>+10 passive points/hr</p>
+                            </div>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </>
+                )}
+
+                {isOwned && (
+                  <Button
+                    onClick={() => setViewingStats(deviceType)}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                  >
+                    <Info className="w-3 h-3 mr-1" />
+                    View Upgrade Path
+                  </Button>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+      )}
     </div>
   );
 };

@@ -73,53 +73,71 @@ export const SmokeBalance = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-6 border-2 border-orange-500/30 hover:border-orange-500/50 transition-colors">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Coins className="w-8 h-8 text-orange-500" />
-          <h3 className="text-white text-xl font-bold uppercase">$SMOKE Balance</h3>
-        </div>
-      </div>
-
-      {/* Current Balance */}
-      <div className="mb-6">
-        <p className="text-gray-400 text-sm uppercase mb-2">Available</p>
-        <p className="text-white text-4xl font-bold">{smokeBalance.toFixed(4)} <span className="text-orange-500">$SMOKE</span></p>
-      </div>
-
-      {/* Conversion Calculator */}
-      <div className="bg-black/30 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-gray-400 text-xs uppercase mb-1">Your Points</p>
-            <p className="text-white text-2xl font-bold">{pointsBalance.toLocaleString()}</p>
-          </div>
-          <ArrowRightLeft className="w-5 h-5 text-gray-500" />
-          <div className="text-right">
-            <p className="text-gray-400 text-xs uppercase mb-1">Converts To</p>
-            <p className="text-orange-500 text-2xl font-bold">{potentialSmoke.toFixed(4)}</p>
+    <div className="space-y-6">
+      {/* $SMOKE Balance Card */}
+      <div className="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-6 border-2 border-orange-500/30 hover:border-orange-500/50 transition-colors">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Coins className="w-8 h-8 text-orange-500" />
+            <h3 className="text-white text-xl font-bold uppercase">$SMOKE Balance</h3>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2 text-gray-400 text-xs">
-          <TrendingDown className="w-4 h-4" />
-          <span>Rate: {conversionRate.toLocaleString()} pts = 1 $SMOKE</span>
+
+        {/* Current Balance */}
+        <div className="mb-6">
+          <p className="text-gray-400 text-sm uppercase mb-2">Available</p>
+          <p className="text-white text-4xl font-bold">{smokeBalance.toFixed(4)} <span className="text-orange-500">$SMOKE</span></p>
         </div>
+
+        {/* Conversion Calculator */}
+        <div className="bg-black/30 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-gray-400 text-xs uppercase mb-1">Your Points</p>
+              <p className="text-white text-2xl font-bold">{pointsBalance.toLocaleString()}</p>
+            </div>
+            <ArrowRightLeft className="w-5 h-5 text-gray-500" />
+            <div className="text-right">
+              <p className="text-gray-400 text-xs uppercase mb-1">Converts To</p>
+              <p className="text-orange-500 text-2xl font-bold">{potentialSmoke.toFixed(4)}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-gray-400 text-xs">
+            <TrendingDown className="w-4 h-4" />
+            <span>Rate: {conversionRate.toLocaleString()} pts = 1 $SMOKE</span>
+          </div>
+        </div>
+
+        {/* Convert Button */}
+        <Button
+          onClick={handleConvertAll}
+          disabled={pointsBalance < conversionRate || isConverting}
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase"
+        >
+          {isConverting ? 'Converting...' : 'Convert All Points'}
+        </Button>
+
+        {pointsBalance < conversionRate && (
+          <p className="text-red-400 text-xs text-center mt-2">
+            Need {(conversionRate - pointsBalance).toLocaleString()} more points to convert
+          </p>
+        )}
       </div>
 
-      {/* Convert Button */}
-      <Button
-        onClick={handleConvertAll}
-        disabled={pointsBalance < conversionRate || isConverting}
-        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase"
-      >
-        {isConverting ? 'Converting...' : 'Convert All Points'}
-      </Button>
-
-      {pointsBalance < conversionRate && (
-        <p className="text-red-400 text-xs text-center mt-2">
-          Need {(conversionRate - pointsBalance).toLocaleString()} more points to convert
-        </p>
+      {/* Spend $SMOKE Section */}
+      {smokeBalance > 0 && (
+        <div className="bg-card rounded-lg p-6 border-2 border-border">
+          <h3 className="text-foreground text-lg font-bold uppercase mb-4">
+            💰 Spend Your $SMOKE
+          </h3>
+          <p className="text-muted-foreground text-sm mb-4">
+            Upgrade your devices below to earn more points per puff and generate passive income!
+          </p>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-muted-foreground">
+            ℹ️ First upgrade is always FREE! Check the "My Devices" section below to upgrade.
+          </div>
+        </div>
       )}
     </div>
   );
