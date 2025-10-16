@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.convert-points-to-smoke]
 verify_jwt = true
+
+[functions.calculate-passive-income]
+verify_jwt = false
