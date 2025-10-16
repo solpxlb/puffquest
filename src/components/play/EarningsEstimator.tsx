@@ -7,7 +7,7 @@ import { GameEconomy } from "@/lib/GameEconomy";
 
 export const EarningsEstimator = () => {
   const { publicKey } = useWallet();
-  const { globalStats, getConversionRate } = useSmokeEconomy();
+  const { globalStats } = useSmokeEconomy();
 
   const { data: profile } = useQuery({
     queryKey: ['user-device-levels', publicKey?.toBase58()],
@@ -32,15 +32,13 @@ export const EarningsEstimator = () => {
 
   const deviceLevels = profile || { vape: 0, cigarette: 0, cigar: 0 };
   const totalPlayers = globalStats.totalPlayers;
-  const conversionRate = getConversionRate();
   
   const estimate = GameEconomy.estimateDailyEarnings(
     deviceLevels,
     {
       totalPlayers: globalStats.totalPlayers,
       rewardsPoolRemaining: globalStats.rewardsPoolRemaining,
-      circulatingSupply: globalStats.circulatingSupply,
-      currentConversionRate: conversionRate
+      circulatingSupply: globalStats.circulatingSupply
     }
   );
 
@@ -49,8 +47,7 @@ export const EarningsEstimator = () => {
     {
       totalPlayers: globalStats.totalPlayers,
       rewardsPoolRemaining: globalStats.rewardsPoolRemaining,
-      circulatingSupply: globalStats.circulatingSupply,
-      currentConversionRate: conversionRate
+      circulatingSupply: globalStats.circulatingSupply
     }
   );
 
@@ -85,13 +82,13 @@ export const EarningsEstimator = () => {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-black/30 rounded-lg p-4">
           <p className="text-gray-400 text-xs uppercase mb-1">From Puffs</p>
-          <p className="text-white text-2xl font-bold">{estimate.pointsFromPuffs.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs">pts/day</p>
+          <p className="text-white text-2xl font-bold">{estimate.smokeFromPuffs.toLocaleString()}</p>
+          <p className="text-gray-500 text-xs">$SMOKE/day</p>
         </div>
         <div className="bg-black/30 rounded-lg p-4">
           <p className="text-gray-400 text-xs uppercase mb-1">Passive</p>
-          <p className="text-white text-2xl font-bold">{estimate.pointsFromPassive.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs">pts/day</p>
+          <p className="text-white text-2xl font-bold">{estimate.smokeFromPassive.toLocaleString()}</p>
+          <p className="text-gray-500 text-xs">$SMOKE/day</p>
         </div>
       </div>
 
@@ -99,15 +96,15 @@ export const EarningsEstimator = () => {
       <div className="bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-gray-300 text-sm uppercase mb-1">Daily $SMOKE</p>
+            <p className="text-gray-300 text-sm uppercase mb-1">Total Daily $SMOKE</p>
             <p className="text-orange-400 text-3xl font-bold">
-              {estimate.smokeEarned.toFixed(4)}
+              {estimate.totalSmoke.toFixed(2)}
             </p>
           </div>
           <Flame className="w-10 h-10 text-orange-500 animate-pulse" />
         </div>
         <p className="text-gray-400 text-xs mt-2">
-          @ {conversionRate.toLocaleString()} pts = 1 $SMOKE
+          Earned directly, no conversion needed!
         </p>
       </div>
 

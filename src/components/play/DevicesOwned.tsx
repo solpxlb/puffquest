@@ -199,11 +199,11 @@ export const DevicesOwned = () => {
     if (level === 0 || !globalStats) return null;
 
     const deviceLevelsForCalc = { vape: 0, cigarette: 0, cigar: 0, [deviceType]: level };
-    const pointsPerPuff = GameEconomy.calculatePuffPoints(deviceLevelsForCalc, globalStats, true);
+    const smokePerPuff = GameEconomy.calculatePuffSmoke(deviceLevelsForCalc, globalStats, true);
     const passivePerHour = GameEconomy.calculatePassiveIncome(deviceLevelsForCalc, globalStats, 1);
 
     return {
-      pointsPerPuff: Math.round(pointsPerPuff),
+      smokePerPuff: Math.round(smokePerPuff),
       passivePerHour: Math.round(passivePerHour),
     };
   };
@@ -279,13 +279,13 @@ export const DevicesOwned = () => {
                 <div className="bg-muted/20 rounded-lg p-3 mb-3 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> Points/Puff
+                      <Zap className="w-3 h-3" /> $SMOKE/Puff
                     </span>
-                    <span className="text-foreground font-bold">{stats.pointsPerPuff}</span>
+                    <span className="text-foreground font-bold">{stats.smokePerPuff}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" /> Passive/Hr
+                      <TrendingUp className="w-3 h-3" /> $SMOKE/Hr
                     </span>
                     <span className="text-foreground font-bold">{stats.passivePerHour}</span>
                   </div>

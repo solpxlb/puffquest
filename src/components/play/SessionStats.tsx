@@ -1,14 +1,14 @@
-import { Clock, Flame, Star, Zap } from "lucide-react";
+import { Clock, Flame, Coins, Zap } from "lucide-react";
 
 interface SessionStatsProps {
   puffCount: number;
-  points: number;
+  smoke: number;
   duration: number; // in seconds
-  pointsPerPuff?: number;
+  smokePerPuff?: number;
   multiplier?: number;
 }
 
-export const SessionStats = ({ puffCount, points, duration, pointsPerPuff = 20, multiplier = 1 }: SessionStatsProps) => {
+export const SessionStats = ({ puffCount, smoke, duration, smokePerPuff = 20, multiplier = 1 }: SessionStatsProps) => {
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -32,10 +32,10 @@ export const SessionStats = ({ puffCount, points, duration, pointsPerPuff = 20, 
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Star className="w-6 h-6 text-yellow-500" />
-            <span className="text-gray-300 text-sm uppercase">Points</span>
+            <Coins className="w-6 h-6 text-orange-500" />
+            <span className="text-gray-300 text-sm uppercase">$SMOKE Earned</span>
           </div>
-          <span className="text-white text-3xl font-bold">{points}</span>
+          <span className="text-orange-400 text-3xl font-bold">{smoke.toFixed(2)}</span>
         </div>
 
         <div className="flex items-center justify-between">
@@ -49,10 +49,10 @@ export const SessionStats = ({ puffCount, points, duration, pointsPerPuff = 20, 
         <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-600">
           <div className="flex items-center gap-3">
             <Zap className="w-5 h-5 text-purple-500" />
-            <span className="text-gray-300 text-xs uppercase">Pts/Puff</span>
+            <span className="text-gray-300 text-xs uppercase">$SMOKE/Puff</span>
           </div>
           <div className="text-right">
-            <span className="text-white text-xl font-bold">{pointsPerPuff}</span>
+            <span className="text-white text-xl font-bold">{smokePerPuff}</span>
             {multiplier > 1 && (
               <span className="ml-2 text-purple-400 text-sm">×{multiplier}</span>
             )}

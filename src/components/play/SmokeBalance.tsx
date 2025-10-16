@@ -1,18 +1,10 @@
-import { Coins, TrendingDown, ArrowRightLeft } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Coins, TrendingUp } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const SmokeBalance = () => {
   const { publicKey } = useWallet();
-  const { toast } = useToast();
-  const { getConversionRate, convertPointsToSmoke } = useSmokeEconomy();
-  const [isConverting, setIsConverting] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ['user-profile', publicKey?.toBase58()],
@@ -21,7 +13,7 @@ export const SmokeBalance = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('smoke_balance, total_points_earned')
+        .select('smoke_balance, total_smoke_earned')
         .eq('wallet_address', publicKey.toBase58())
         .single();
 
@@ -32,45 +24,7 @@ export const SmokeBalance = () => {
   });
 
   const smokeBalance = Number(profile?.smoke_balance || 0);
-  const pointsBalance = Number(profile?.total_points_earned || 0);
-  const conversionRate = getConversionRate();
-  const potentialSmoke = convertPointsToSmoke(pointsBalance);
-
-  const handleConvertAll = async () => {
-    if (pointsBalance < conversionRate) {
-      toast({
-        title: "Insufficient Points",
-        description: `You need at least ${conversionRate.toLocaleString()} points to convert to $SMOKE`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsConverting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('convert-points-to-smoke', {
-        body: { pointsToConvert: pointsBalance }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Conversion Successful! 🎉",
-        description: `Converted ${pointsBalance.toLocaleString()} points to ${data.smokeEarned.toFixed(4)} $SMOKE`
-      });
-
-      // Refetch profile
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    } catch (error: any) {
-      toast({
-        title: "Conversion Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
+  const totalSmokeEarned = Number(profile?.total_smoke_earned || 0);
 
   return (
     <div className="space-y-6">
@@ -85,44 +39,24 @@ export const SmokeBalance = () => {
 
         {/* Current Balance */}
         <div className="mb-6">
-          <p className="text-gray-400 text-sm uppercase mb-2">Available</p>
+          <p className="text-gray-400 text-sm uppercase mb-2">Current Balance</p>
           <p className="text-white text-4xl font-bold">{smokeBalance.toFixed(4)} <span className="text-orange-500">$SMOKE</span></p>
         </div>
 
-        {/* Conversion Calculator */}
-        <div className="bg-black/30 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-gray-400 text-xs uppercase mb-1">Your Points</p>
-              <p className="text-white text-2xl font-bold">{pointsBalance.toLocaleString()}</p>
+        {/* Lifetime Earnings */}
+        <div className="bg-black/30 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <p className="text-gray-400 text-sm uppercase">Lifetime Earned</p>
             </div>
-            <ArrowRightLeft className="w-5 h-5 text-gray-500" />
-            <div className="text-right">
-              <p className="text-gray-400 text-xs uppercase mb-1">Converts To</p>
-              <p className="text-orange-500 text-2xl font-bold">{potentialSmoke.toFixed(4)}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 text-gray-400 text-xs">
-            <TrendingDown className="w-4 h-4" />
-            <span>Rate: {conversionRate.toLocaleString()} pts = 1 $SMOKE</span>
+            <p className="text-green-400 text-2xl font-bold">{totalSmokeEarned.toFixed(4)}</p>
           </div>
         </div>
 
-        {/* Convert Button */}
-        <Button
-          onClick={handleConvertAll}
-          disabled={pointsBalance < conversionRate || isConverting}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase"
-        >
-          {isConverting ? 'Converting...' : 'Convert All Points'}
-        </Button>
-
-        {pointsBalance < conversionRate && (
-          <p className="text-red-400 text-xs text-center mt-2">
-            Need {(conversionRate - pointsBalance).toLocaleString()} more points to convert
-          </p>
-        )}
+        <div className="mt-4 bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-muted-foreground">
+          ℹ️ You earn $SMOKE directly from puffs. No conversion needed!
+        </div>
       </div>
 
       {/* Spend $SMOKE Section */}
@@ -132,7 +66,7 @@ export const SmokeBalance = () => {
             💰 Spend Your $SMOKE
           </h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Upgrade your devices below to earn more points per puff and generate passive income!
+            Upgrade your devices below to earn more $SMOKE per puff and generate passive income!
           </p>
           <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-muted-foreground">
             ℹ️ First upgrade is always FREE! Check the "My Devices" section below to upgrade.

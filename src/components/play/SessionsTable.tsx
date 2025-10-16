@@ -6,7 +6,7 @@ interface Session {
   id: string;
   started_at: string;
   puff_count: number;
-  points_earned: number;
+  smoke_earned: number;
   duration_seconds: number | null;
 }
 
@@ -20,7 +20,7 @@ export const SessionsTable = () => {
 
       const { data: sessionsData } = await supabase
         .from("puff_sessions")
-        .select("id, started_at, duration_seconds, puff_count, points_earned")
+        .select("id, started_at, duration_seconds, puff_count, smoke_earned")
         .eq("user_id", publicKey.toString())
         .order("started_at", { ascending: false })
         .limit(10);
@@ -31,7 +31,7 @@ export const SessionsTable = () => {
         id: session.id,
         started_at: session.started_at,
         puff_count: session.puff_count,
-        points_earned: session.points_earned,
+        smoke_earned: session.smoke_earned,
         duration_seconds: session.duration_seconds,
       })));
     };
@@ -63,7 +63,7 @@ export const SessionsTable = () => {
             <tr className="bg-gray-900">
               <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Date</th>
               <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Puffs</th>
-              <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Points</th>
+              <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">$SMOKE</th>
               <th className="text-left text-gray-400 text-xs uppercase font-bold p-4">Duration</th>
             </tr>
           </thead>
@@ -84,7 +84,7 @@ export const SessionsTable = () => {
                 >
                   <td className="text-white p-4">{formatDate(session.started_at)}</td>
                   <td className="text-white p-4 font-bold">{session.puff_count}</td>
-                  <td className="text-white p-4 font-bold">{session.points_earned}</td>
+                  <td className="text-orange-400 p-4 font-bold">{session.smoke_earned.toFixed(2)}</td>
                   <td className="text-white p-4">{formatDuration(session.duration_seconds)}</td>
                 </tr>
               ))
@@ -112,8 +112,8 @@ export const SessionsTable = () => {
                   <p className="text-white text-xl font-bold">{session.puff_count}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400 text-xs uppercase">Points</span>
-                  <p className="text-white text-xl font-bold">{session.points_earned}</p>
+                  <span className="text-gray-400 text-xs uppercase">$SMOKE</span>
+                  <p className="text-orange-400 text-xl font-bold">{session.smoke_earned.toFixed(2)}</p>
                 </div>
               </div>
             </div>

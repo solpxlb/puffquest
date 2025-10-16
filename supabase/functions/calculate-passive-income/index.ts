@@ -13,26 +13,35 @@ const calculatePassiveIncome = (
 ): number => {
   const cappedHours = Math.min(hoursSinceLastClaim, 24);
   
-  const deviceMultipliers = {
-    vape: deviceLevels.vape >= 2 ? (deviceLevels.vape - 1) * 5 : 0,
-    cigarette: deviceLevels.cigarette >= 2 ? (deviceLevels.cigarette - 1) * 8 : 0,
-    cigar: deviceLevels.cigar >= 2 ? (deviceLevels.cigar - 1) * 12 : 0,
-  };
+  // Calculate hourly passive $SMOKE rate
+  let hourlySmoke = 0;
+  
+  // Vape: 10 $SMOKE/hr per level (starting at Level 2)
+  if (deviceLevels.vape >= 2) {
+    hourlySmoke += (deviceLevels.vape - 1) * 10;
+  }
+  
+  // Cigarette: 15 $SMOKE/hr per level (starting at Level 2)
+  if (deviceLevels.cigarette >= 2) {
+    hourlySmoke += (deviceLevels.cigarette - 1) * 15;
+  }
+  
+  // Cigar: 25 $SMOKE/hr per level (starting at Level 2)
+  if (deviceLevels.cigar >= 2) {
+    hourlySmoke += (deviceLevels.cigar - 1) * 25;
+  }
 
-  const basePassivePerHour = 
-    deviceMultipliers.vape + 
-    deviceMultipliers.cigarette + 
-    deviceMultipliers.cigar;
+  if (hourlySmoke === 0) return 0;
 
-  if (basePassivePerHour === 0) return 0;
-
+  // Apply deflation
   const totalPlayers = Math.max(globalStats.total_players || 1, 1);
-  const rewardsPool = globalStats.rewards_pool_remaining || 45000000;
-  const playerScarcityFactor = Math.min(totalPlayers / 1000, 10);
-  const poolDepletionFactor = Math.max(rewardsPool / 45000000, 0.1);
-  const deflationMultiplier = poolDepletionFactor / Math.sqrt(playerScarcityFactor);
+  let deflationFactor = 1.0;
+  
+  if (totalPlayers >= 100) {
+    deflationFactor = Math.max(0.2, 1 - ((totalPlayers - 100) * 0.002));
+  }
 
-  return Math.floor(basePassivePerHour * cappedHours * deflationMultiplier);
+  return Math.floor(hourlySmoke * cappedHours * deflationFactor);
 };
 
 Deno.serve(async (req) => {
@@ -62,7 +71,7 @@ Deno.serve(async (req) => {
     // Fetch all users with Level 2+ devices
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, wallet_address, device_levels, total_points_earned, last_passive_claim')
+      .select('id, wallet_address, device_levels, smoke_balance, total_smoke_earned, last_passive_claim')
       .or('device_levels->>vape.gte.2,device_levels->>cigarette.gte.2,device_levels->>cigar.gte.2');
 
     if (profilesError) {
@@ -87,16 +96,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const passivePoints = calculatePassiveIncome(deviceLevels, globalStats, hoursSinceLastClaim);
+      const passiveSmoke = calculatePassiveIncome(deviceLevels, globalStats, hoursSinceLastClaim);
 
-      if (passivePoints > 0) {
-        const newTotalPoints = (profile.total_points_earned || 0) + passivePoints;
+      if (passiveSmoke > 0) {
+        const newSmokeBalance = (profile.smoke_balance || 0) + passiveSmoke;
+        const newTotalSmoke = (profile.total_smoke_earned || 0) + passiveSmoke;
 
         // Update profile
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            total_points_earned: newTotalPoints,
+            smoke_balance: newSmokeBalance,
+            total_smoke_earned: newTotalSmoke,
             last_passive_claim: now.toISOString(),
           })
           .eq('id', profile.id);
@@ -112,10 +123,9 @@ Deno.serve(async (req) => {
           .insert({
             user_id: profile.wallet_address,
             transaction_type: 'earn_passive',
-            amount: 0,
-            points_converted: passivePoints,
-            balance_after: 0, // Not converting to SMOKE yet
-            description: `Passive income: ${passivePoints} points`,
+            amount: passiveSmoke,
+            balance_after: newSmokeBalance,
+            description: `Passive income: ${passiveSmoke} $SMOKE`,
             metadata: {
               hours_claimed: Math.min(hoursSinceLastClaim, 24),
               device_levels: deviceLevels,
@@ -126,13 +136,13 @@ Deno.serve(async (req) => {
           console.error(`Error logging transaction for ${profile.wallet_address}:`, txError);
         }
 
-        totalPassiveAwarded += passivePoints;
+        totalPassiveAwarded += passiveSmoke;
         usersProcessed++;
-        console.log(`Awarded ${passivePoints} points to ${profile.wallet_address}`);
+        console.log(`Awarded ${passiveSmoke} $SMOKE to ${profile.wallet_address}`);
       }
     }
 
-    console.log(`Passive income calculation complete. Processed ${usersProcessed} users, awarded ${totalPassiveAwarded} total points`);
+    console.log(`Passive income calculation complete. Processed ${usersProcessed} users, awarded ${totalPassiveAwarded} total $SMOKE`);
 
     return new Response(
       JSON.stringify({

@@ -17,35 +17,29 @@ export type Database = {
       global_stats: {
         Row: {
           circulating_supply: number | null
-          current_conversion_rate: number | null
           id: number
           last_updated: string | null
           rewards_pool_remaining: number | null
           team_allocation: number | null
           total_players: number | null
-          total_points_distributed: number | null
           total_smoke_distributed: number | null
         }
         Insert: {
           circulating_supply?: number | null
-          current_conversion_rate?: number | null
           id?: number
           last_updated?: string | null
           rewards_pool_remaining?: number | null
           team_allocation?: number | null
           total_players?: number | null
-          total_points_distributed?: number | null
           total_smoke_distributed?: number | null
         }
         Update: {
           circulating_supply?: number | null
-          current_conversion_rate?: number | null
           id?: number
           last_updated?: string | null
           rewards_pool_remaining?: number | null
           team_allocation?: number | null
           total_players?: number | null
-          total_points_distributed?: number | null
           total_smoke_distributed?: number | null
         }
         Relationships: []
@@ -59,7 +53,6 @@ export type Database = {
           last_passive_claim: string | null
           smoke_balance: number | null
           streak_days: number | null
-          total_points_earned: number | null
           total_puffs: number | null
           total_smoke_earned: number | null
           updated_at: string
@@ -74,7 +67,6 @@ export type Database = {
           last_passive_claim?: string | null
           smoke_balance?: number | null
           streak_days?: number | null
-          total_points_earned?: number | null
           total_puffs?: number | null
           total_smoke_earned?: number | null
           updated_at?: string
@@ -89,7 +81,6 @@ export type Database = {
           last_passive_claim?: string | null
           smoke_balance?: number | null
           streak_days?: number | null
-          total_points_earned?: number | null
           total_puffs?: number | null
           total_smoke_earned?: number | null
           updated_at?: string
@@ -116,9 +107,9 @@ export type Database = {
           mouth_height: number | null
           mouth_pucker: number | null
           mouth_width: number | null
-          points_awarded: number | null
           sequence_score: number | null
           session_id: string
+          smoke_awarded: number | null
           user_id: string
         }
         Insert: {
@@ -138,9 +129,9 @@ export type Database = {
           mouth_height?: number | null
           mouth_pucker?: number | null
           mouth_width?: number | null
-          points_awarded?: number | null
           sequence_score?: number | null
           session_id: string
+          smoke_awarded?: number | null
           user_id: string
         }
         Update: {
@@ -160,9 +151,9 @@ export type Database = {
           mouth_height?: number | null
           mouth_pucker?: number | null
           mouth_width?: number | null
-          points_awarded?: number | null
           sequence_score?: number | null
           session_id?: string
+          smoke_awarded?: number | null
           user_id?: string
         }
         Relationships: [
@@ -181,8 +172,8 @@ export type Database = {
           duration_seconds: number | null
           ended_at: string | null
           id: string
-          points_earned: number
           puff_count: number
+          smoke_earned: number
           started_at: string
           updated_at: string
           user_id: string
@@ -192,8 +183,8 @@ export type Database = {
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
-          points_earned?: number
           puff_count?: number
+          smoke_earned?: number
           started_at?: string
           updated_at?: string
           user_id: string
@@ -203,8 +194,8 @@ export type Database = {
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
-          points_earned?: number
           puff_count?: number
+          smoke_earned?: number
           started_at?: string
           updated_at?: string
           user_id?: string
@@ -219,7 +210,6 @@ export type Database = {
           description: string | null
           id: string
           metadata: Json | null
-          points_converted: number | null
           transaction_type: string
           user_id: string
         }
@@ -230,7 +220,6 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          points_converted?: number | null
           transaction_type: string
           user_id: string
         }
@@ -241,7 +230,6 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          points_converted?: number | null
           transaction_type?: string
           user_id?: string
         }

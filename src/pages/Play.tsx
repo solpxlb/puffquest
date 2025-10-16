@@ -20,14 +20,14 @@ import { useQuery } from "@tanstack/react-query";
 const Play = () => {
   const { connected, publicKey } = useWallet();
   const { toast } = useToast();
-  const { globalStats, getConversionRate } = useSmokeEconomy();
+  const { globalStats } = useSmokeEconomy();
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessionStats, setSessionStats] = useState({
     puffCount: 0,
-    points: 0,
+    smoke: 0,
     duration: 0,
   });
 
@@ -49,23 +49,22 @@ const Play = () => {
     enabled: !!publicKey
   });
 
-  // Calculate dynamic points per puff
-  const calculatePointsForPuff = () => {
+  // Calculate dynamic $SMOKE per puff
+  const calculateSmokeForPuff = () => {
     if (!globalStats || !deviceLevels) return 20;
 
-    return GameEconomy.calculatePuffPoints(
+    return GameEconomy.calculatePuffSmoke(
       deviceLevels,
       {
         totalPlayers: globalStats.totalPlayers,
         rewardsPoolRemaining: globalStats.rewardsPoolRemaining,
-        circulatingSupply: globalStats.circulatingSupply,
-        currentConversionRate: getConversionRate()
+        circulatingSupply: globalStats.circulatingSupply
       },
       isSessionActive
     );
   };
 
-  const pointsPerPuff = calculatePointsForPuff();
+  const smokePerPuff = calculateSmokeForPuff();
   const sessionMultiplier = isSessionActive ? 2.5 : 1.0;
 
   // Check if user has purchased vices
@@ -113,7 +112,7 @@ const Play = () => {
         .insert({
           user_id: publicKey.toString(),
           puff_count: 0,
-          points_earned: 0,
+          smoke_earned: 0,
         })
         .select()
         .single();
@@ -122,11 +121,11 @@ const Play = () => {
 
       setCurrentSessionId(data.id);
       setIsSessionActive(true);
-      setSessionStats({ puffCount: 0, points: 0, duration: 0 });
+      setSessionStats({ puffCount: 0, smoke: 0, duration: 0 });
 
       toast({
         title: "Session Started",
-        description: "Start smoking to earn points!",
+        description: "Start smoking to earn $SMOKE!",
       });
     } catch (error) {
       console.error("Error starting session:", error);
@@ -148,7 +147,7 @@ const Play = () => {
         .update({
           ended_at: new Date().toISOString(),
           puff_count: sessionStats.puffCount,
-          points_earned: sessionStats.points,
+          smoke_earned: sessionStats.smoke,
           duration_seconds: sessionStats.duration,
         })
         .eq("id", currentSessionId);
@@ -157,7 +156,7 @@ const Play = () => {
 
       toast({
         title: "Session Ended",
-        description: `You earned ${sessionStats.points} points from ${sessionStats.puffCount} puffs!`,
+        description: `You earned ${sessionStats.smoke.toFixed(2)} $SMOKE from ${sessionStats.puffCount} puffs!`,
       });
 
       setIsSessionActive(false);
@@ -175,18 +174,18 @@ const Play = () => {
   const handlePuffDetected = async (puffAnalysis: PuffAnalysis) => {
     if (!currentSessionId || !isSessionActive || !publicKey) return;
 
-    const earnedPoints = pointsPerPuff;
+    const earnedSmoke = smokePerPuff;
 
     // Update stats immediately
     setSessionStats((prev) => ({
       ...prev,
       puffCount: prev.puffCount + 1,
-      points: prev.points + earnedPoints,
+      smoke: prev.smoke + earnedSmoke,
     }));
 
     toast({
       title: "Puff Detected! 🔥",
-      description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +${earnedPoints} points`,
+      description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +${earnedSmoke} $SMOKE`,
     });
 
     // Try to record event for analytics (non-blocking) and update profile
@@ -210,13 +209,13 @@ const Play = () => {
           max_mouth_pucker: parseFloat(puffAnalysis.details.maxMouthPucker),
           sequence_score: puffAnalysis.details.sequenceScore,
           detection_reason: puffAnalysis.reason,
-          points_awarded: earnedPoints
+          smoke_awarded: earnedSmoke
         });
 
-      // Update user profile with new points and puff count
+      // Update user profile with new $SMOKE and puff count
       const { data: profile } = await supabase
         .from('profiles')
-        .select('total_points_earned, total_puffs')
+        .select('smoke_balance, total_smoke_earned, total_puffs')
         .eq('wallet_address', publicKey.toBase58())
         .single();
 
@@ -224,7 +223,8 @@ const Play = () => {
         await supabase
           .from('profiles')
           .update({
-            total_points_earned: Number(profile.total_points_earned || 0) + earnedPoints,
+            smoke_balance: Number(profile.smoke_balance || 0) + earnedSmoke,
+            total_smoke_earned: Number(profile.total_smoke_earned || 0) + earnedSmoke,
             total_puffs: Number(profile.total_puffs || 0) + 1,
             last_active_date: new Date().toISOString().split('T')[0]
           })
@@ -290,9 +290,9 @@ const Play = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SessionStats
                 puffCount={sessionStats.puffCount}
-                points={sessionStats.points}
+                smoke={sessionStats.smoke}
                 duration={sessionStats.duration}
-                pointsPerPuff={pointsPerPuff}
+                smokePerPuff={smokePerPuff}
                 multiplier={sessionMultiplier}
               />
               <LifetimeStats />

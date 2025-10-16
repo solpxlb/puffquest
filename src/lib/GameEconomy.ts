@@ -13,7 +13,6 @@ interface GlobalStats {
   totalPlayers: number;
   rewardsPoolRemaining: number;
   circulatingSupply: number;
-  currentConversionRate: number;
 }
 
 interface DeviceLevels {
@@ -25,56 +24,25 @@ interface DeviceLevels {
 export class GameEconomy {
   // Constants
   private static readonly INITIAL_POOL = 45_000_000;
-  private static readonly BASE_CONVERSION_RATE = 10_000; // 10k points = 1 $SMOKE initially
-  private static readonly MAX_CONVERSION_RATE = 1_000_000; // Worst case: 1M points = 1 $SMOKE
-  
-  /**
-   * Calculate brutal deflationary conversion rate
-   * First 50 users: ~10k-20k points per $SMOKE
-   * Users 51-100: ~20k-50k points per $SMOKE
-   * Users 100+: Exponentially worse, up to 1M points per $SMOKE
-   */
-  static getPointsToSmokeRate(stats: GlobalStats): number {
-    const { totalPlayers, rewardsPoolRemaining } = stats;
-    
-    // Early adopter bonus (first 50 users)
-    if (totalPlayers < 50) {
-      return this.BASE_CONVERSION_RATE + (totalPlayers * 200); // 10k → 20k
-    }
-    
-    // Mid-range (users 50-100)
-    if (totalPlayers < 100) {
-      const multiplier = 1 + ((totalPlayers - 50) * 0.6); // 1x → 30x
-      return Math.floor(this.BASE_CONVERSION_RATE * multiplier);
-    }
-    
-    // Brutal deflation (users 100+)
-    const poolDepletionFactor = 1 - (rewardsPoolRemaining / this.INITIAL_POOL);
-    const playerInflationFactor = Math.pow(totalPlayers / 100, 2.5);
-    const deflationMultiplier = 1 + (poolDepletionFactor * 20) + (playerInflationFactor * 10);
-    
-    const rate = Math.floor(this.BASE_CONVERSION_RATE * deflationMultiplier);
-    return Math.min(rate, this.MAX_CONVERSION_RATE);
-  }
 
   /**
-   * Calculate dynamic points per puff
+   * Calculate dynamic $SMOKE per puff (DIRECT REWARDS)
    * Factors:
-   * - Device levels (higher = more points)
+   * - Device levels (higher = more $SMOKE)
    * - Total players (more players = deflation)
    * - Pool remaining (lower pool = deflation)
    * - Active session multiplier (2.5x when camera is on)
    */
-  static calculatePuffPoints(
+  static calculatePuffSmoke(
     deviceLevels: DeviceLevels,
     stats: GlobalStats,
     isActiveSession: boolean = false
   ): number {
-    // Base points from device levels
-    const vapePoints = deviceLevels.vape * 5;
-    const cigarettePoints = deviceLevels.cigarette * 8;
-    const cigarPoints = deviceLevels.cigar * 12;
-    const basePoints = 20 + vapePoints + cigarettePoints + cigarPoints;
+    // Base $SMOKE from device levels
+    const vapeSmoke = deviceLevels.vape * 5;
+    const cigaretteSmoke = deviceLevels.cigarette * 8;
+    const cigarSmoke = deviceLevels.cigar * 12;
+    const baseSmoke = 20 + vapeSmoke + cigaretteSmoke + cigarSmoke;
     
     // Deflation factor (reduces points as game progresses)
     const { totalPlayers, rewardsPoolRemaining } = stats;
@@ -96,13 +64,13 @@ export class GameEconomy {
     // Daily streak multiplier
     const streakMultiplier = this.getStreakMultiplier(1); // Default to 1 day
     
-    const finalPoints = Math.floor(basePoints * deflationFactor * sessionMultiplier * streakMultiplier);
-    return Math.max(1, finalPoints); // Minimum 1 point
+    const finalSmoke = Math.floor(baseSmoke * deflationFactor * sessionMultiplier * streakMultiplier);
+    return Math.max(1, finalSmoke); // Minimum 1 $SMOKE
   }
 
   /**
-   * Calculate passive income for Level 2+ devices
-   * - Only devices at Level 2 or higher earn passive income
+   * Calculate passive $SMOKE for Level 2+ devices (DIRECT REWARDS)
+   * - Only devices at Level 2 or higher earn passive $SMOKE
    * - Hourly rate based on device level and type
    * - Maximum 24 hours can accumulate (must claim daily)
    * - Subject to deflation
@@ -115,22 +83,22 @@ export class GameEconomy {
     // Cap at 24 hours
     const effectiveHours = Math.min(hoursSinceLastClaim, 24);
     
-    // Calculate hourly passive rate
-    let hourlyPoints = 0;
+    // Calculate hourly passive $SMOKE rate
+    let hourlySmoke = 0;
     
-    // Vape: 10 points/hr per level (starting at Level 2)
+    // Vape: 10 $SMOKE/hr per level (starting at Level 2)
     if (deviceLevels.vape >= 2) {
-      hourlyPoints += (deviceLevels.vape - 1) * 10;
+      hourlySmoke += (deviceLevels.vape - 1) * 10;
     }
     
-    // Cigarette: 15 points/hr per level (starting at Level 2)
+    // Cigarette: 15 $SMOKE/hr per level (starting at Level 2)
     if (deviceLevels.cigarette >= 2) {
-      hourlyPoints += (deviceLevels.cigarette - 1) * 15;
+      hourlySmoke += (deviceLevels.cigarette - 1) * 15;
     }
     
-    // Cigar: 25 points/hr per level (starting at Level 2)
+    // Cigar: 25 $SMOKE/hr per level (starting at Level 2)
     if (deviceLevels.cigar >= 2) {
-      hourlyPoints += (deviceLevels.cigar - 1) * 25;
+      hourlySmoke += (deviceLevels.cigar - 1) * 25;
     }
     
     // Apply deflation
@@ -141,8 +109,8 @@ export class GameEconomy {
       deflationFactor = Math.max(0.2, 1 - ((totalPlayers - 100) * 0.002));
     }
     
-    const totalPoints = Math.floor(hourlyPoints * effectiveHours * deflationFactor);
-    return totalPoints;
+    const totalSmoke = Math.floor(hourlySmoke * effectiveHours * deflationFactor);
+    return totalSmoke;
   }
 
   /**
@@ -185,7 +153,7 @@ export class GameEconomy {
   }
 
   /**
-   * Estimate daily earnings for a user
+   * Estimate daily $SMOKE earnings for a user (DIRECT REWARDS)
    * Assumes:
    * - 30 puffs/day
    * - 50% active session time
@@ -196,36 +164,30 @@ export class GameEconomy {
     stats: GlobalStats,
     streakDays: number = 1
   ): {
-    pointsFromPuffs: number;
-    pointsFromPassive: number;
-    totalPoints: number;
-    smokeEarned: number;
-    conversionRate: number;
+    smokeFromPuffs: number;
+    smokeFromPassive: number;
+    totalSmoke: number;
   } {
     const avgPuffsPerDay = 30;
     const activeSessionRatio = 0.5;
     
-    // Points from active puffing
+    // $SMOKE from active puffing
     const activePuffs = Math.floor(avgPuffsPerDay * activeSessionRatio);
     const passivePuffs = avgPuffsPerDay - activePuffs;
     
-    const activePoints = activePuffs * this.calculatePuffPoints(deviceLevels, stats, true);
-    const passivePoints = passivePuffs * this.calculatePuffPoints(deviceLevels, stats, false);
-    const puffPoints = activePoints + passivePoints;
+    const activeSmoke = activePuffs * this.calculatePuffSmoke(deviceLevels, stats, true);
+    const passiveSmoke = passivePuffs * this.calculatePuffSmoke(deviceLevels, stats, false);
+    const puffSmoke = activeSmoke + passiveSmoke;
     
-    // Points from passive income (24 hours)
+    // $SMOKE from passive income (24 hours)
     const passiveIncome = this.calculatePassiveIncome(deviceLevels, stats, 24);
     
-    const totalPoints = puffPoints + passiveIncome;
-    const conversionRate = this.getPointsToSmokeRate(stats);
-    const smokeEarned = totalPoints / conversionRate;
+    const totalSmoke = puffSmoke + passiveIncome;
     
     return {
-      pointsFromPuffs: puffPoints,
-      pointsFromPassive: passiveIncome,
-      totalPoints,
-      smokeEarned,
-      conversionRate
+      smokeFromPuffs: puffSmoke,
+      smokeFromPassive: passiveIncome,
+      totalSmoke
     };
   }
 
@@ -247,12 +209,12 @@ export class GameEconomy {
     const smokeNeeded = solCost / smokeToSolRate; // $SMOKE needed to breakeven
     
     const daily = this.estimateDailyEarnings(deviceLevels, stats);
-    const daysToBreakeven = smokeNeeded / daily.smokeEarned;
+    const daysToBreakeven = smokeNeeded / daily.totalSmoke;
     
     return {
       canBreakeven: daysToBreakeven <= 3,
       daysToBreakeven: Math.ceil(daysToBreakeven),
-      dailyEarnings: daily.smokeEarned
+      dailyEarnings: daily.totalSmoke
     };
   }
 }

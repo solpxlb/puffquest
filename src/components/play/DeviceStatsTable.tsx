@@ -17,10 +17,9 @@ export const DeviceStatsTable = ({ deviceType, currentLevel }: DeviceStatsTableP
       totalPlayers: 1,
       rewardsPoolRemaining: 45000000,
       circulatingSupply: 40000000,
-      currentConversionRate: 10000,
     };
 
-    const pointsPerPuff = GameEconomy.calculatePuffPoints(
+    const smokePerPuff = GameEconomy.calculatePuffSmoke(
       deviceLevels,
       globalStats || defaultStats,
       true
@@ -35,7 +34,7 @@ export const DeviceStatsTable = ({ deviceType, currentLevel }: DeviceStatsTableP
     const upgradeCost = GameEconomy.getUpgradeCost(level);
 
     return {
-      pointsPerPuff: Math.round(pointsPerPuff),
+      smokePerPuff: Math.round(smokePerPuff),
       passivePerHour: Math.round(passivePerHour),
       upgradeCost,
     };
@@ -58,13 +57,13 @@ export const DeviceStatsTable = ({ deviceType, currentLevel }: DeviceStatsTableP
               <th className="text-right text-muted-foreground uppercase py-3 px-2">
                 <div className="flex items-center justify-end gap-1">
                   <Zap className="w-4 h-4" />
-                  Points/Puff
+                  $SMOKE/Puff
                 </div>
               </th>
               <th className="text-right text-muted-foreground uppercase py-3 px-2">
                 <div className="flex items-center justify-end gap-1">
                   <TrendingUp className="w-4 h-4" />
-                  Passive/Hr
+                  $SMOKE/Hr
                 </div>
               </th>
               <th className="text-right text-muted-foreground uppercase py-3 px-2">
@@ -94,7 +93,7 @@ export const DeviceStatsTable = ({ deviceType, currentLevel }: DeviceStatsTableP
                     )}
                   </td>
                   <td className="py-3 px-2 text-right text-foreground">
-                    {level === 0 ? "-" : stats.pointsPerPuff}
+                    {level === 0 ? "-" : stats.smokePerPuff}
                   </td>
                   <td className="py-3 px-2 text-right text-foreground">
                     {level === 0 ? "-" : stats.passivePerHour}
@@ -119,8 +118,8 @@ export const DeviceStatsTable = ({ deviceType, currentLevel }: DeviceStatsTableP
 
       <div className="mt-4 p-4 bg-muted/20 rounded-lg">
         <p className="text-xs text-muted-foreground">
-          💡 <strong>Pro Tip:</strong> Higher levels earn more points per puff AND generate passive
-          income while you're offline. The first upgrade is always free!
+          💡 <strong>Pro Tip:</strong> Higher levels earn more $SMOKE per puff AND generate passive
+          $SMOKE while you're offline. The first upgrade is always free!
         </p>
       </div>
     </div>
