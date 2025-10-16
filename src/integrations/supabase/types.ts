@@ -14,11 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      global_stats: {
+        Row: {
+          circulating_supply: number | null
+          current_conversion_rate: number | null
+          id: number
+          last_updated: string | null
+          rewards_pool_remaining: number | null
+          team_allocation: number | null
+          total_players: number | null
+          total_points_distributed: number | null
+          total_smoke_distributed: number | null
+        }
+        Insert: {
+          circulating_supply?: number | null
+          current_conversion_rate?: number | null
+          id?: number
+          last_updated?: string | null
+          rewards_pool_remaining?: number | null
+          team_allocation?: number | null
+          total_players?: number | null
+          total_points_distributed?: number | null
+          total_smoke_distributed?: number | null
+        }
+        Update: {
+          circulating_supply?: number | null
+          current_conversion_rate?: number | null
+          id?: number
+          last_updated?: string | null
+          rewards_pool_remaining?: number | null
+          team_allocation?: number | null
+          total_players?: number | null
+          total_points_distributed?: number | null
+          total_smoke_distributed?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           device_levels: Json
           id: string
+          last_active_date: string | null
+          last_passive_claim: string | null
+          smoke_balance: number | null
+          streak_days: number | null
+          total_points_earned: number | null
+          total_puffs: number | null
+          total_smoke_earned: number | null
           updated_at: string
           vices: string[] | null
           wallet_address: string
@@ -27,6 +70,13 @@ export type Database = {
           created_at?: string
           device_levels?: Json
           id: string
+          last_active_date?: string | null
+          last_passive_claim?: string | null
+          smoke_balance?: number | null
+          streak_days?: number | null
+          total_points_earned?: number | null
+          total_puffs?: number | null
+          total_smoke_earned?: number | null
           updated_at?: string
           vices?: string[] | null
           wallet_address: string
@@ -35,6 +85,13 @@ export type Database = {
           created_at?: string
           device_levels?: Json
           id?: string
+          last_active_date?: string | null
+          last_passive_claim?: string | null
+          smoke_balance?: number | null
+          streak_days?: number | null
+          total_points_earned?: number | null
+          total_puffs?: number | null
+          total_smoke_earned?: number | null
           updated_at?: string
           vices?: string[] | null
           wallet_address?: string
@@ -150,6 +207,42 @@ export type Database = {
           puff_count?: number
           started_at?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      smoke_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          points_converted: number | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          points_converted?: number | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          points_converted?: number | null
+          transaction_type?: string
           user_id?: string
         }
         Relationships: []

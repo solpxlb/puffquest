@@ -1,12 +1,14 @@
-import { Clock, Flame, Star } from "lucide-react";
+import { Clock, Flame, Star, Zap } from "lucide-react";
 
 interface SessionStatsProps {
   puffCount: number;
   points: number;
   duration: number; // in seconds
+  pointsPerPuff?: number;
+  multiplier?: number;
 }
 
-export const SessionStats = ({ puffCount, points, duration }: SessionStatsProps) => {
+export const SessionStats = ({ puffCount, points, duration, pointsPerPuff = 20, multiplier = 1 }: SessionStatsProps) => {
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -42,6 +44,19 @@ export const SessionStats = ({ puffCount, points, duration }: SessionStatsProps)
             <span className="text-gray-300 text-sm uppercase">Time</span>
           </div>
           <span className="text-white text-2xl font-bold">{formatDuration(duration)}</span>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-600">
+          <div className="flex items-center gap-3">
+            <Zap className="w-5 h-5 text-purple-500" />
+            <span className="text-gray-300 text-xs uppercase">Pts/Puff</span>
+          </div>
+          <div className="text-right">
+            <span className="text-white text-xl font-bold">{pointsPerPuff}</span>
+            {multiplier > 1 && (
+              <span className="ml-2 text-purple-400 text-sm">×{multiplier}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

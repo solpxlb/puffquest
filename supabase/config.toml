@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.get-rpc-url]
 verify_jwt = false
+
+[functions.update-global-stats]
+verify_jwt = false
+
+[functions.convert-points-to-smoke]
+verify_jwt = true

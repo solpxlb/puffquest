@@ -10,11 +10,17 @@ import { SessionStats } from "@/components/play/SessionStats";
 import { LifetimeStats } from "@/components/play/LifetimeStats";
 import { DevicesOwned } from "@/components/play/DevicesOwned";
 import { SessionsTable } from "@/components/play/SessionsTable";
+import { SmokeBalance } from "@/components/play/SmokeBalance";
+import { EarningsEstimator } from "@/components/play/EarningsEstimator";
 import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
+import { GameEconomy } from "@/lib/GameEconomy";
+import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
+import { useQuery } from "@tanstack/react-query";
 
 const Play = () => {
   const { connected, publicKey } = useWallet();
   const { toast } = useToast();
+  const { globalStats, getConversionRate } = useSmokeEconomy();
   const [hasPurchased, setHasPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -24,6 +30,43 @@ const Play = () => {
     points: 0,
     duration: 0,
   });
+
+  // Fetch user's device levels for dynamic points calculation
+  const { data: deviceLevels } = useQuery({
+    queryKey: ['device-levels', publicKey?.toBase58()],
+    queryFn: async () => {
+      if (!publicKey) return { vape: 0, cigarette: 0, cigar: 0 };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('device_levels')
+        .eq('wallet_address', publicKey.toBase58())
+        .single();
+
+      if (error) return { vape: 0, cigarette: 0, cigar: 0 };
+      return data?.device_levels as { vape: number; cigarette: number; cigar: number };
+    },
+    enabled: !!publicKey
+  });
+
+  // Calculate dynamic points per puff
+  const calculatePointsForPuff = () => {
+    if (!globalStats || !deviceLevels) return 20;
+
+    return GameEconomy.calculatePuffPoints(
+      deviceLevels,
+      {
+        totalPlayers: globalStats.totalPlayers,
+        rewardsPoolRemaining: globalStats.rewardsPoolRemaining,
+        circulatingSupply: globalStats.circulatingSupply,
+        currentConversionRate: getConversionRate()
+      },
+      isSessionActive
+    );
+  };
+
+  const pointsPerPuff = calculatePointsForPuff();
+  const sessionMultiplier = isSessionActive ? 2.5 : 1.0;
 
   // Check if user has purchased vices
   useEffect(() => {
@@ -132,19 +175,21 @@ const Play = () => {
   const handlePuffDetected = async (puffAnalysis: PuffAnalysis) => {
     if (!currentSessionId || !isSessionActive || !publicKey) return;
 
+    const earnedPoints = pointsPerPuff;
+
     // Update stats immediately
     setSessionStats((prev) => ({
       ...prev,
       puffCount: prev.puffCount + 1,
-      points: prev.points + 20,
+      points: prev.points + earnedPoints,
     }));
 
     toast({
-      title: "Puff Detected!",
-      description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +20 points`,
+      title: "Puff Detected! 🔥",
+      description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +${earnedPoints} points`,
     });
 
-    // Try to record event for analytics (non-blocking)
+    // Try to record event for analytics (non-blocking) and update profile
     try {
       await supabase
         .from("puff_events")
@@ -165,8 +210,26 @@ const Play = () => {
           max_mouth_pucker: parseFloat(puffAnalysis.details.maxMouthPucker),
           sequence_score: puffAnalysis.details.sequenceScore,
           detection_reason: puffAnalysis.reason,
-          points_awarded: 20
+          points_awarded: earnedPoints
         });
+
+      // Update user profile with new points and puff count
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_points_earned, total_puffs')
+        .eq('wallet_address', publicKey.toBase58())
+        .single();
+
+      if (profile) {
+        await supabase
+          .from('profiles')
+          .update({
+            total_points_earned: Number(profile.total_points_earned || 0) + earnedPoints,
+            total_puffs: Number(profile.total_puffs || 0) + 1,
+            last_active_date: new Date().toISOString().split('T')[0]
+          })
+          .eq('wallet_address', publicKey.toBase58());
+      }
     } catch (error) {
       console.error("Error recording puff event:", error);
     }
@@ -209,6 +272,12 @@ const Play = () => {
           <PurchaseGate onPurchaseComplete={() => setHasPurchased(true)} />
         ) : (
           <div className="max-w-6xl mx-auto space-y-8">
+            {/* Earnings Estimator & $SMOKE Balance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <EarningsEstimator />
+              <SmokeBalance />
+            </div>
+
             {/* Camera Tracker */}
             <CameraTracker
               onPuffDetected={handlePuffDetected}
@@ -223,6 +292,8 @@ const Play = () => {
                 puffCount={sessionStats.puffCount}
                 points={sessionStats.points}
                 duration={sessionStats.duration}
+                pointsPerPuff={pointsPerPuff}
+                multiplier={sessionMultiplier}
               />
               <LifetimeStats />
             </div>
