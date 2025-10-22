@@ -15,6 +15,7 @@ export const LifetimeStats = () => {
     const fetchLifetimeStats = async () => {
       if (!publicKey) return;
 
+<<<<<<< HEAD
       try {
         // Primary approach: Aggregate data from all completed sessions
         const { data: sessions, error: sessionsError } = await supabase
@@ -70,6 +71,28 @@ export const LifetimeStats = () => {
           totalPuffs: 0,
           totalSmoke: 0,
           daysActive: 0,
+=======
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("total_smoke_earned, total_puffs")
+        .eq("wallet_address", publicKey.toString())
+        .single();
+
+      if (profile) {
+        const { data: sessions } = await supabase
+          .from("puff_sessions")
+          .select("started_at")
+          .eq("user_id", publicKey.toString());
+
+        const uniqueDays = sessions 
+          ? new Set(sessions.map((s) => new Date(s.started_at).toDateString())).size 
+          : 0;
+
+        setStats({
+          totalPuffs: Number(profile.total_puffs || 0),
+          totalSmoke: Number(profile.total_smoke_earned || 0),
+          daysActive: uniqueDays,
+>>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
         });
       }
     };

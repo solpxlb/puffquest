@@ -2,7 +2,11 @@ import Navbar from "@/components/Navbar";
 import HowToPlay from "@/components/HowToPlay";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { Twitter, MessageCircle } from "lucide-react";
+=======
+import { Twitter } from "lucide-react";
+>>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
 
 
 const Index = () => {
@@ -51,6 +55,7 @@ const Index = () => {
                 >
                   <Twitter className="w-6 h-6 sm:w-7 sm:h-7" />
                 </a>
+<<<<<<< HEAD
                 <a
                   href="https://discord.gg/puffquest"
                   target="_blank"
@@ -60,6 +65,8 @@ const Index = () => {
                 >
                   <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
                 </a>
+=======
+>>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
               </div>
             </div>
 

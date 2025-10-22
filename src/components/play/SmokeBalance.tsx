@@ -53,7 +53,15 @@ export const SmokeBalance = () => {
             <p className="text-green-400 text-2xl font-bold">{totalSmokeEarned.toFixed(4)}</p>
           </div>
         </div>
+<<<<<<< HEAD
         </div>
+=======
+
+        <div className="mt-4 bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-muted-foreground">
+          ℹ️ You earn $SMOKE directly from puffs. No conversion needed!
+        </div>
+      </div>
+>>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
 
       {/* Spend $SMOKE Section */}
       {smokeBalance > 0 && (

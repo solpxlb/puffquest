@@ -108,6 +108,54 @@ export const EarningsEstimator = () => {
         </p>
       </div>
 
+<<<<<<< HEAD
       </div>
+=======
+      {/* Breakeven Status */}
+      <div className={`rounded-lg p-3 flex items-start gap-3 ${
+        canBreakeven 
+          ? 'bg-green-900/20 border border-green-500/30' 
+          : 'bg-red-900/20 border border-red-500/30'
+      }`}>
+        <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+          canBreakeven ? 'text-green-500' : 'text-red-500'
+        }`} />
+        <div>
+          {canBreakeven ? (
+            <>
+              <p className="text-green-400 font-bold text-sm">
+                ✅ Breakeven in {breakeven.daysToBreakeven} days
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                You're early enough to profit! Keep puffing.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-red-400 font-bold text-sm">
+                ⚠️ Breakeven in {breakeven.daysToBreakeven} days
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                {isLateJoiner 
+                  ? "You're late. Deflation is brutal. Don't expect profits."
+                  : "Act fast! The pool is depleting rapidly."
+                }
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* FOMO Generator */}
+      {isEarlyAdopter && (
+        <div className="mt-4 bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+          <p className="text-green-400 font-bold text-sm">🔥 EARLY ADOPTER BONUS</p>
+          <p className="text-gray-300 text-xs mt-1">
+            You're one of the first {totalPlayers} players. Earnings are at peak!
+          </p>
+        </div>
+      )}
+    </div>
+>>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
   );
 };
