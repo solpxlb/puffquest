@@ -15,63 +15,6 @@ export const LifetimeStats = () => {
     const fetchLifetimeStats = async () => {
       if (!publicKey) return;
 
-<<<<<<< HEAD
-      try {
-        // Primary approach: Aggregate data from all completed sessions
-        const { data: sessions, error: sessionsError } = await supabase
-          .from("puff_sessions")
-          .select("puff_count, smoke_earned, started_at")
-          .eq("user_id", publicKey.toString())
-          .not("ended_at", "is", null); // Only include completed sessions
-
-        if (!sessionsError && sessions && sessions.length > 0) {
-          // Calculate totals from sessions
-          const totalPuffs = sessions.reduce((sum, session) => sum + Number(session.puff_count || 0), 0);
-          const totalSmoke = sessions.reduce((sum, session) => sum + Number(session.smoke_earned || 0), 0);
-
-          // Calculate unique active days
-          const uniqueDays = new Set(
-            sessions.map((s) => new Date(s.started_at).toDateString())
-          ).size;
-
-          setStats({
-            totalPuffs,
-            totalSmoke,
-            daysActive: uniqueDays,
-          });
-        } else {
-          // Fallback: Try to get data from profiles table
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("total_smoke_earned, total_puffs")
-            .eq("wallet_address", publicKey.toString())
-            .single();
-
-          if (!profileError && profile) {
-            const { data: sessionsForDays } = await supabase
-              .from("puff_sessions")
-              .select("started_at")
-              .eq("user_id", publicKey.toString());
-
-            const uniqueDays = sessionsForDays
-              ? new Set(sessionsForDays.map((s) => new Date(s.started_at).toDateString())).size
-              : 0;
-
-            setStats({
-              totalPuffs: Number(profile.total_puffs || 0),
-              totalSmoke: Number(profile.total_smoke_earned || 0),
-              daysActive: uniqueDays,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching lifetime stats:", error);
-        // Set default values on error
-        setStats({
-          totalPuffs: 0,
-          totalSmoke: 0,
-          daysActive: 0,
-=======
       const { data: profile } = await supabase
         .from("profiles")
         .select("total_smoke_earned, total_puffs")
@@ -92,7 +35,6 @@ export const LifetimeStats = () => {
           totalPuffs: Number(profile.total_puffs || 0),
           totalSmoke: Number(profile.total_smoke_earned || 0),
           daysActive: uniqueDays,
->>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
         });
       }
     };

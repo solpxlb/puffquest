@@ -108,9 +108,6 @@ export const EarningsEstimator = () => {
         </p>
       </div>
 
-<<<<<<< HEAD
-      </div>
-=======
       {/* Breakeven Status */}
       <div className={`rounded-lg p-3 flex items-start gap-3 ${
         canBreakeven 
@@ -156,6 +153,5 @@ export const EarningsEstimator = () => {
         </div>
       )}
     </div>
->>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
   );
 };

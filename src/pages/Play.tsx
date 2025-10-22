@@ -10,11 +10,8 @@ import { SessionStats } from "@/components/play/SessionStats";
 import { LifetimeStats } from "@/components/play/LifetimeStats";
 import { DevicesOwned } from "@/components/play/DevicesOwned";
 import { SessionsTable } from "@/components/play/SessionsTable";
-<<<<<<< HEAD
-=======
 import { SmokeBalance } from "@/components/play/SmokeBalance";
 import { EarningsEstimator } from "@/components/play/EarningsEstimator";
->>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
 import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
 import { GameEconomy } from "@/lib/GameEconomy";
 import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
@@ -275,15 +272,12 @@ const Play = () => {
           <PurchaseGate onPurchaseComplete={() => setHasPurchased(true)} />
         ) : (
           <div className="max-w-6xl mx-auto space-y-8">
-<<<<<<< HEAD
-=======
             {/* Earnings Estimator & $SMOKE Balance */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <EarningsEstimator />
               <SmokeBalance />
             </div>
 
->>>>>>> 269b8779299bb2fcd72a0f7537f245cf0ebfedd7
             {/* Camera Tracker */}
             <CameraTracker
               onPuffDetected={handlePuffDetected}
