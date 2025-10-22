@@ -1,0 +1,22 @@
+project_id = "xgisixdxffyvwsfsnjsu"
+
+[auth.web3.solana]
+enabled = true
+
+[functions.purchase-vices]
+verify_jwt = false
+
+[functions.get-team-wallet]
+verify_jwt = false
+
+[functions.get-rpc-url]
+verify_jwt = false
+
+[functions.update-global-stats]
+verify_jwt = false
+
+[functions.convert-points-to-smoke]
+verify_jwt = true
+
+[functions.calculate-passive-income]
+verify_jwt = false
