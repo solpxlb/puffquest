@@ -9,13 +9,11 @@ import { CameraTracker } from "@/components/play/CameraTracker";
 import { SessionStats } from "@/components/play/SessionStats";
 import { LifetimeStats } from "@/components/play/LifetimeStats";
 import { DevicesOwned } from "@/components/play/DevicesOwned";
-import { SessionsTable } from "@/components/play/SessionsTable";
-import { SmokeBalance } from "@/components/play/SmokeBalance";
-import { EarningsEstimator } from "@/components/play/EarningsEstimator";
 import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
 import { GameEconomy } from "@/lib/GameEconomy";
 import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 const Play = () => {
   const { connected, publicKey } = useWallet();
@@ -272,12 +270,6 @@ const Play = () => {
           <PurchaseGate onPurchaseComplete={() => setHasPurchased(true)} />
         ) : (
           <div className="max-w-6xl mx-auto space-y-8">
-            {/* Earnings Estimator & $SMOKE Balance */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EarningsEstimator />
-              <SmokeBalance />
-            </div>
-
             {/* Camera Tracker */}
             <CameraTracker
               onPuffDetected={handlePuffDetected}
@@ -301,8 +293,21 @@ const Play = () => {
             {/* Devices Owned */}
             <DevicesOwned />
 
-            {/* Sessions Table */}
-            <SessionsTable />
+            {/* Earnings Link */}
+            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg p-6 border-2 border-orange-500/30">
+              <div className="text-center">
+                <h3 className="text-white text-xl font-bold mb-3">View Your Earnings</h3>
+                <p className="text-gray-300 mb-4">
+                  Track your $SMOKE balance, daily earnings, and claim your rewards
+                </p>
+                <Link
+                  to="/earnings"
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded-lg transition-all"
+                >
+                  📊 View Earnings
+                </Link>
+              </div>
+            </div>
           </div>
         )}
       </main>

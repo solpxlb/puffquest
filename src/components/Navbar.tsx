@@ -15,7 +15,7 @@ const Navbar = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Play", href: "/play" },
-    { name: "About", href: "#" },
+    { name: "Earnings", href: "/earnings" },
   ];
 
   return (

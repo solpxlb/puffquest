@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WalletContextProvider } from "@/contexts/WalletContextProvider";
 import Index from "./pages/Index";
 import Play from "./pages/Play";
+import Earnings from "./pages/Earnings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/play" element={<Play />} />
+            <Route path="/earnings" element={<Earnings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
