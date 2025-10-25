@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      claim_transactions: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          error_message: string | null
+          fee_paid: number | null
+          id: string
+          status: string
+          transaction_signature: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fee_paid?: number | null
+          id?: string
+          status: string
+          transaction_signature?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fee_paid?: number | null
+          id?: string
+          status?: string
+          transaction_signature?: string | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       global_stats: {
         Row: {
           circulating_supply: number | null
@@ -47,42 +86,21 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          device_levels: Json
           id: string
-          last_active_date: string | null
-          last_passive_claim: string | null
-          smoke_balance: number | null
-          streak_days: number | null
-          total_puffs: number | null
-          total_smoke_earned: number | null
           updated_at: string
           vices: string[] | null
           wallet_address: string
         }
         Insert: {
           created_at?: string
-          device_levels?: Json
           id: string
-          last_active_date?: string | null
-          last_passive_claim?: string | null
-          smoke_balance?: number | null
-          streak_days?: number | null
-          total_puffs?: number | null
-          total_smoke_earned?: number | null
           updated_at?: string
           vices?: string[] | null
           wallet_address: string
         }
         Update: {
           created_at?: string
-          device_levels?: Json
           id?: string
-          last_active_date?: string | null
-          last_passive_claim?: string | null
-          smoke_balance?: number | null
-          streak_days?: number | null
-          total_puffs?: number | null
-          total_smoke_earned?: number | null
           updated_at?: string
           vices?: string[] | null
           wallet_address?: string
@@ -206,6 +224,7 @@ export type Database = {
         Row: {
           amount: number
           balance_after: number
+          balance_before: number | null
           created_at: string | null
           description: string | null
           id: string
@@ -216,6 +235,7 @@ export type Database = {
         Insert: {
           amount: number
           balance_after: number
+          balance_before?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -226,6 +246,7 @@ export type Database = {
         Update: {
           amount?: number
           balance_after?: number
+          balance_before?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -234,6 +255,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_smoke_balance: {
+        Row: {
+          created_at: string | null
+          current_balance: number | null
+          device_levels: Json | null
+          first_seen_at: string | null
+          last_active_date: string | null
+          last_passive_claim: string | null
+          passive_accumulated: number | null
+          streak_days: number | null
+          total_claimed: number | null
+          total_earned: number | null
+          total_puffs: number | null
+          total_spent: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_balance?: number | null
+          device_levels?: Json | null
+          first_seen_at?: string | null
+          last_active_date?: string | null
+          last_passive_claim?: string | null
+          passive_accumulated?: number | null
+          streak_days?: number | null
+          total_claimed?: number | null
+          total_earned?: number | null
+          total_puffs?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_balance?: number | null
+          device_levels?: Json | null
+          first_seen_at?: string | null
+          last_active_date?: string | null
+          last_passive_claim?: string | null
+          passive_accumulated?: number | null
+          streak_days?: number | null
+          total_claimed?: number | null
+          total_earned?: number | null
+          total_puffs?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_smoke_balance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["wallet_address"]
+          },
+        ]
       }
       vice_purchases: {
         Row: {

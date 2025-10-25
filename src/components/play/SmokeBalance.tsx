@@ -1,30 +1,20 @@
-import { Coins, TrendingUp } from "lucide-react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { Coins, TrendingUp, Wallet } from "lucide-react";
+import { useUnifiedBalance } from "@/hooks/useUnifiedBalance";
+import { useWalletTokenBalance } from "@/hooks/useWalletTokenBalance";
+import { GameEconomy } from "@/lib/GameEconomy";
 
 export const SmokeBalance = () => {
-  const { publicKey } = useWallet();
+  // Use wallet token balance for current balance and unified data for lifetime stats
+  const { data: walletSmokeBalance } = useWalletTokenBalance();
+  const { data: balanceData, isLoading } = useUnifiedBalance();
 
-  const { data: profile } = useQuery({
-    queryKey: ['user-profile', publicKey?.toBase58()],
-    queryFn: async () => {
-      if (!publicKey) return null;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('smoke_balance, total_smoke_earned')
-        .eq('wallet_address', publicKey.toBase58())
-        .single();
+  const smokeBalance = walletSmokeBalance || 0;
+  const totalSmokeEarned = Number(balanceData?.total_earned || 0);
+  const totalSpent = Number(balanceData?.total_spent || 0);
+  const totalClaimed = Number(balanceData?.total_claimed || 0);
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!publicKey
-  });
-
-  const smokeBalance = Number(profile?.smoke_balance || 0);
-  const totalSmokeEarned = Number(profile?.total_smoke_earned || 0);
+  // Unified data is always consistent - no fallback logic needed
+  const displayTotalEarned = totalSmokeEarned;
 
   return (
     <div className="space-y-6">
@@ -32,15 +22,15 @@ export const SmokeBalance = () => {
       <div className="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-6 border-2 border-orange-500/30 hover:border-orange-500/50 transition-colors">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Coins className="w-8 h-8 text-orange-500" />
-            <h3 className="text-white text-xl font-bold uppercase">$SMOKE Balance</h3>
+            <Wallet className="w-8 h-8 text-orange-500" />
+            <h3 className="text-white text-xl font-bold uppercase">Wallet $SMOKE</h3>
           </div>
         </div>
 
         {/* Current Balance */}
         <div className="mb-6">
           <p className="text-gray-400 text-sm uppercase mb-2">Current Balance</p>
-          <p className="text-white text-4xl font-bold">{smokeBalance.toFixed(4)} <span className="text-orange-500">$SMOKE</span></p>
+          <p className="text-white text-4xl font-bold">{GameEconomy.formatBalance(smokeBalance)} <span className="text-orange-500">$SMOKE</span></p>
         </div>
 
         {/* Lifetime Earnings */}
@@ -50,12 +40,33 @@ export const SmokeBalance = () => {
               <TrendingUp className="w-5 h-5 text-green-500" />
               <p className="text-gray-400 text-sm uppercase">Lifetime Earned</p>
             </div>
-            <p className="text-green-400 text-2xl font-bold">{totalSmokeEarned.toFixed(4)}</p>
+            <p className="text-green-400 text-2xl font-bold">{GameEconomy.formatBalance(displayTotalEarned)}</p>
           </div>
         </div>
 
+        {/* Spending Breakdown */}
+        {(totalSpent > 0 || totalClaimed > 0) && (
+          <div className="bg-black/30 rounded-lg p-4 mt-4">
+            <p className="text-gray-400 text-xs uppercase mb-3">Balance Breakdown</p>
+            <div className="space-y-2">
+              {totalSpent > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-orange-400 text-xs">Spent on Upgrades</span>
+                  <span className="text-orange-400 font-bold">-{GameEconomy.formatBalance(totalSpent)}</span>
+                </div>
+              )}
+              {totalClaimed > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-400 text-xs">Claimed to Wallet</span>
+                  <span className="text-blue-400 font-bold">-{GameEconomy.formatBalance(totalClaimed)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-muted-foreground">
-          ℹ️ You earn $SMOKE directly from puffs. No conversion needed!
+          ℹ️ Wallet balance - tokens are transferred to contract for upgrades
         </div>
       </div>
 

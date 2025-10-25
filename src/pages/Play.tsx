@@ -12,7 +12,7 @@ import { DevicesOwned } from "@/components/play/DevicesOwned";
 import type { PuffAnalysis } from "@/lib/MediaPipeSetup";
 import { GameEconomy } from "@/lib/GameEconomy";
 import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
-import { useQuery } from "@tanstack/react-query";
+import { useUnifiedBalance } from "@/hooks/useUnifiedBalance";
 import { Link } from "react-router-dom";
 
 const Play = () => {
@@ -29,23 +29,9 @@ const Play = () => {
     duration: 0,
   });
 
-  // Fetch user's device levels for dynamic points calculation
-  const { data: deviceLevels } = useQuery({
-    queryKey: ['device-levels', publicKey?.toBase58()],
-    queryFn: async () => {
-      if (!publicKey) return { vape: 0, cigarette: 0, cigar: 0 };
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('device_levels')
-        .eq('wallet_address', publicKey.toBase58())
-        .single();
-
-      if (error) return { vape: 0, cigarette: 0, cigar: 0 };
-      return data?.device_levels as { vape: number; cigarette: number; cigar: number };
-    },
-    enabled: !!publicKey
-  });
+  // Use unified balance data for device levels - single source of truth
+  const { data: balanceData } = useUnifiedBalance();
+  const deviceLevels = balanceData?.device_levels as { vape: number; cigarette: number; cigar: number } || { vape: 0, cigarette: 0, cigar: 0 };
 
   // Calculate dynamic $SMOKE per puff
   const calculateSmokeForPuff = () => {
@@ -186,7 +172,7 @@ const Play = () => {
       description: `${puffAnalysis.confidence.toFixed(0)}% confidence - +${earnedSmoke} $SMOKE`,
     });
 
-    // Try to record event for analytics (non-blocking) and update profile
+    // Try to record event for analytics (non-blocking) and update unified balance
     try {
       await supabase
         .from("puff_events")
@@ -210,23 +196,24 @@ const Play = () => {
           smoke_awarded: earnedSmoke
         });
 
-      // Update user profile with new $SMOKE and puff count
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('smoke_balance, total_smoke_earned, total_puffs')
-        .eq('wallet_address', publicKey.toBase58())
+      // Update unified user smoke balance
+      // This will automatically trigger balance change recording and total_earned updates
+      const { data: currentBalance } = await supabase
+        .from('user_smoke_balance')
+        .select('current_balance, total_puffs')
+        .eq('user_id', publicKey.toBase58())
         .single();
 
-      if (profile) {
+      if (currentBalance) {
         await supabase
-          .from('profiles')
+          .from('user_smoke_balance')
           .update({
-            smoke_balance: Number(profile.smoke_balance || 0) + earnedSmoke,
-            total_smoke_earned: Number(profile.total_smoke_earned || 0) + earnedSmoke,
-            total_puffs: Number(profile.total_puffs || 0) + 1,
-            last_active_date: new Date().toISOString().split('T')[0]
+            current_balance: Number(currentBalance.current_balance || 0) + earnedSmoke,
+            total_puffs: Number(currentBalance.total_puffs || 0) + 1,
+            last_active_date: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString()
           })
-          .eq('wallet_address', publicKey.toBase58());
+          .eq('user_id', publicKey.toBase58());
       }
     } catch (error) {
       console.error("Error recording puff event:", error);

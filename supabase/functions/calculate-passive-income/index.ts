@@ -12,20 +12,20 @@ const calculatePassiveIncome = (
   hoursSinceLastClaim: number
 ): number => {
   const cappedHours = Math.min(hoursSinceLastClaim, 24);
-  
+
   // Calculate hourly passive $SMOKE rate
   let hourlySmoke = 0;
-  
+
   // Vape: 10 $SMOKE/hr per level (starting at Level 2)
   if (deviceLevels.vape >= 2) {
     hourlySmoke += (deviceLevels.vape - 1) * 10;
   }
-  
+
   // Cigarette: 15 $SMOKE/hr per level (starting at Level 2)
   if (deviceLevels.cigarette >= 2) {
     hourlySmoke += (deviceLevels.cigarette - 1) * 15;
   }
-  
+
   // Cigar: 25 $SMOKE/hr per level (starting at Level 2)
   if (deviceLevels.cigar >= 2) {
     hourlySmoke += (deviceLevels.cigar - 1) * 25;
@@ -36,7 +36,7 @@ const calculatePassiveIncome = (
   // Apply deflation
   const totalPlayers = Math.max(globalStats.total_players || 1, 1);
   let deflationFactor = 1.0;
-  
+
   if (totalPlayers >= 100) {
     deflationFactor = Math.max(0.2, 1 - ((totalPlayers - 100) * 0.002));
   }
@@ -68,26 +68,29 @@ Deno.serve(async (req) => {
       throw statsError;
     }
 
-    // Fetch all users with Level 2+ devices
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, wallet_address, device_levels, smoke_balance, total_smoke_earned, last_passive_claim')
+    // Fetch all users with Level 2+ devices from user_smoke_balance
+    const { data: userBalances, error: balanceError } = await supabase
+      .from('user_smoke_balance')
+      .select('user_id, device_levels, current_balance, total_earned, last_passive_claim')
       .or('device_levels->>vape.gte.2,device_levels->>cigarette.gte.2,device_levels->>cigar.gte.2');
 
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      throw profilesError;
+    if (balanceError) {
+      console.error('Error fetching user balances:', balanceError);
+      throw balanceError;
     }
 
-    console.log(`Found ${profiles?.length || 0} users with passive income eligible devices`);
+    console.log(`Found ${userBalances?.length || 0} users with passive income eligible devices`);
 
     let totalPassiveAwarded = 0;
     let usersProcessed = 0;
 
     // Process each user
-    for (const profile of profiles || []) {
-      const deviceLevels = profile.device_levels as { vape: number; cigarette: number; cigar: number };
-      const lastClaim = profile.last_passive_claim ? new Date(profile.last_passive_claim) : new Date();
+    for (const userBalance of userBalances || []) {
+      const deviceLevels = userBalance.device_levels as { vape: number; cigarette: number; cigar: number };
+      // If last_passive_claim is null, default to 24 hours ago to award initial passive income
+      const lastClaim = userBalance.last_passive_claim
+        ? new Date(userBalance.last_passive_claim)
+        : new Date(Date.now() - (24 * 60 * 60 * 1000));
       const now = new Date();
       const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
 
@@ -99,21 +102,24 @@ Deno.serve(async (req) => {
       const passiveSmoke = calculatePassiveIncome(deviceLevels, globalStats, hoursSinceLastClaim);
 
       if (passiveSmoke > 0) {
-        const newSmokeBalance = (profile.smoke_balance || 0) + passiveSmoke;
-        const newTotalSmoke = (profile.total_smoke_earned || 0) + passiveSmoke;
+        const currentBalance = Number(userBalance.current_balance || 0);
+        const newBalance = currentBalance + passiveSmoke;
+        const newTotalEarned = Number(userBalance.total_earned || 0) + passiveSmoke;
 
-        // Update profile
+        // Update user_smoke_balance
         const { error: updateError } = await supabase
-          .from('profiles')
+          .from('user_smoke_balance')
           .update({
-            smoke_balance: newSmokeBalance,
-            total_smoke_earned: newTotalSmoke,
+            current_balance: newBalance,
+            total_earned: newTotalEarned,
             last_passive_claim: now.toISOString(),
+            passive_accumulated: passiveSmoke,
+            updated_at: now.toISOString(),
           })
-          .eq('id', profile.id);
+          .eq('user_id', userBalance.user_id);
 
         if (updateError) {
-          console.error(`Error updating profile ${profile.wallet_address}:`, updateError);
+          console.error(`Error updating user_smoke_balance for ${userBalance.user_id}:`, updateError);
           continue;
         }
 
@@ -121,10 +127,11 @@ Deno.serve(async (req) => {
         const { error: txError } = await supabase
           .from('smoke_transactions')
           .insert({
-            user_id: profile.wallet_address,
+            user_id: userBalance.user_id,
             transaction_type: 'earn_passive',
             amount: passiveSmoke,
-            balance_after: newSmokeBalance,
+            balance_before: currentBalance,
+            balance_after: newBalance,
             description: `Passive income: ${passiveSmoke} $SMOKE`,
             metadata: {
               hours_claimed: Math.min(hoursSinceLastClaim, 24),
@@ -133,12 +140,12 @@ Deno.serve(async (req) => {
           });
 
         if (txError) {
-          console.error(`Error logging transaction for ${profile.wallet_address}:`, txError);
+          console.error(`Error logging transaction for ${userBalance.user_id}:`, txError);
         }
 
         totalPassiveAwarded += passiveSmoke;
         usersProcessed++;
-        console.log(`Awarded ${passiveSmoke} $SMOKE to ${profile.wallet_address}`);
+        console.log(`Awarded ${passiveSmoke} $SMOKE to ${userBalance.user_id}`);
       }
     }
 

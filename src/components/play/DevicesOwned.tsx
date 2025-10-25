@@ -7,6 +7,9 @@ import { useSolanaTransaction } from "@/hooks/useSolanaTransaction";
 import { GameEconomy } from "@/lib/GameEconomy";
 import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWalletTokenBalance } from "@/hooks/useWalletTokenBalance";
+import { transferSmokeToTreasury, checkUserSmokeBalance, checkTransactionStatus } from "@/lib/SmokeClaimContract";
+import { Connection } from "@solana/web3.js";
 import { DeviceStatsTable } from "./DeviceStatsTable";
 import { Zap, TrendingUp, Info } from "lucide-react";
 import {
@@ -54,20 +57,25 @@ const getDeviceImage = (deviceType: DeviceType, level: number): string => {
 };
 
 export const DevicesOwned = () => {
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const { toast } = useToast();
   const { sendSol, isLoading: isTransacting } = useSolanaTransaction();
   const { globalStats } = useSmokeEconomy();
   const queryClient = useQueryClient();
+  const { data: walletSmokeBalance } = useWalletTokenBalance();
   const [deviceLevels, setDeviceLevels] = useState<DeviceLevels>({
     vape: 0,
     cigarette: 0,
     cigar: 0,
   });
-  const [smokeBalance, setSmokeBalance] = useState(0);
   const [viewingStats, setViewingStats] = useState<DeviceType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [pendingTransaction, setPendingTransaction] = useState<{
+    deviceType: DeviceType;
+    signature: string;
+    upgradeCost: number;
+  } | null>(null);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -77,9 +85,9 @@ export const DevicesOwned = () => {
       }
 
       const { data, error } = await supabase
-        .from("profiles")
-        .select("device_levels, smoke_balance")
-        .eq("wallet_address", publicKey.toString())
+        .from("user_smoke_balance")
+        .select("device_levels")
+        .eq("user_id", publicKey.toString())
         .single();
 
       if (error) {
@@ -95,7 +103,6 @@ export const DevicesOwned = () => {
           cigarette: levels.cigarette ?? 0,
           cigar: levels.cigar ?? 0,
         });
-        setSmokeBalance(Number(data.smoke_balance || 0));
       }
       setIsLoading(false);
     };
@@ -114,9 +121,12 @@ export const DevicesOwned = () => {
       const newLevels = { ...deviceLevels, [deviceType]: 1 };
 
       const { error } = await supabase
-        .from("profiles")
-        .update({ device_levels: newLevels })
-        .eq("wallet_address", publicKey.toString());
+        .from("user_smoke_balance")
+        .update({
+          device_levels: newLevels,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", publicKey.toString());
 
       if (error) throw error;
 
@@ -136,25 +146,76 @@ export const DevicesOwned = () => {
     }
   };
 
-  const handleUpgradeDevice = async (deviceType: DeviceType) => {
-    if (!publicKey) return;
+  const handleUpgradeDevice = async (deviceType: DeviceType, retrySignature?: string) => {
+    if (!publicKey || !signTransaction) return;
 
     const currentLevel = deviceLevels[deviceType];
     const upgradeCost = GameEconomy.getUpgradeCost(currentLevel);
+    const smokeBalance = walletSmokeBalance || 0;
 
-    if (smokeBalance < upgradeCost) {
+    if (smokeBalance < upgradeCost && !retrySignature) {
       toast({
         title: "Insufficient $SMOKE",
-        description: `You need ${upgradeCost} $SMOKE to upgrade. You have ${smokeBalance.toFixed(4)} $SMOKE.`,
+        description: `You need ${upgradeCost} $SMOKE to upgrade. You have ${smokeBalance.toFixed(4)} $SMOKE in your wallet.`,
         variant: "destructive",
       });
       return;
     }
 
     setIsUpgrading(true);
+    let tokenTransferSignature = retrySignature;
+
     try {
+      const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+      // Step 1: Handle token transfer (skip if retrying with existing signature)
+      if (!retrySignature) {
+        toast({
+          title: "Processing Token Transfer",
+          description: "Please approve the $SMOKE token transfer to upgrade your device.",
+        });
+
+        try {
+          const result = await transferSmokeToTreasury(
+            connection,
+            publicKey,
+            signTransaction,
+            upgradeCost
+          );
+          tokenTransferSignature = result.signature;
+        } catch (transferError: unknown) {
+          const error = transferError as Error;
+          console.error("Token transfer error:", error);
+
+          // Check if this is a "transaction already processed" error
+          if (error.message.includes('already been processed')) {
+            toast({
+              title: "Transaction Already Processed",
+              description: "It looks like your transfer was already processed. Let's check and retry the upgrade...",
+              variant: "default",
+            });
+            // We'll continue to try the upgrade with whatever signature we can find
+            return;
+          }
+
+          throw transferError;
+        }
+      }
+
+      if (!tokenTransferSignature) {
+        throw new Error("No transaction signature available");
+      }
+
+      console.log("Proceeding with upgrade using signature:", tokenTransferSignature);
+
+      // Step 2: Verify the transaction status and call backend upgrade
+      toast({
+        title: "Verifying Transfer",
+        description: "Confirming your token transfer and upgrading device...",
+      });
+
       const { data, error } = await supabase.functions.invoke('upgrade-device', {
-        body: { deviceType }
+        body: { deviceType, transactionSignature: tokenTransferSignature }
       });
 
       if (error) throw error;
@@ -163,25 +224,54 @@ export const DevicesOwned = () => {
         throw new Error(data.error);
       }
 
-      // Update local state
+      // Step 3: Update local state on success
       const newLevels = { ...deviceLevels, [deviceType]: data.newLevel };
       setDeviceLevels(newLevels);
-      setSmokeBalance(data.newBalance);
+
+      // Clear any pending transaction
+      setPendingTransaction(null);
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-token-balance'] });
 
       toast({
         title: "Device Upgraded! 🎉",
-        description: `${DEVICE_CONFIG[deviceType].name} is now level ${data.newLevel}. Spent ${upgradeCost} $SMOKE.`,
+        description: `${DEVICE_CONFIG[deviceType].name} is now level ${data.newLevel}. Transferred ${upgradeCost} $SMOKE to contract.`,
       });
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       console.error("Error upgrading device:", error);
-      toast({
-        title: "Upgrade Failed",
-        description: error.message || "Failed to upgrade device. Please try again.",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Failed to upgrade device. Please try again.";
+
+      // If we have a transaction signature, save it for potential retry
+      if (tokenTransferSignature && !errorMessage.includes('Insufficient')) {
+        setPendingTransaction({
+          deviceType,
+          signature: tokenTransferSignature,
+          upgradeCost
+        });
+
+        toast({
+          title: "Upgrade Failed - Tokens Transferred",
+          description: "Your $SMOKE tokens were transferred but the device upgrade failed. You can retry the upgrade without spending more tokens.",
+          variant: "destructive",
+          action: (
+            <button
+              onClick={() => handleUpgradeDevice(deviceType, tokenTransferSignature)}
+              className="ml-2 px-2 py-1 text-xs bg-primary text-primary-foreground rounded"
+            >
+              Retry Upgrade
+            </button>
+          ),
+        });
+      } else {
+        toast({
+          title: "Upgrade Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsUpgrading(false);
     }
@@ -239,7 +329,7 @@ export const DevicesOwned = () => {
             const isMaxLevel = level >= 10;
             const upgradeCost = GameEconomy.getUpgradeCost(level);
             const stats = getDeviceStats(deviceType, level);
-            const canAffordUpgrade = smokeBalance >= upgradeCost;
+            const canAffordUpgrade = (walletSmokeBalance || 0) >= upgradeCost;
 
           return (
             <div
@@ -334,7 +424,7 @@ export const DevicesOwned = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           {!canAffordUpgrade ? (
-                            <p>Need {(upgradeCost - smokeBalance).toFixed(4)} more $SMOKE</p>
+                            <p>Need {(upgradeCost - (walletSmokeBalance || 0)).toFixed(4)} more $SMOKE</p>
                           ) : (
                             <div className="text-xs space-y-1">
                               <p className="font-bold">Next Level Benefits:</p>

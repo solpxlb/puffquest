@@ -25,6 +25,72 @@ export class GameEconomy {
   // Constants
   private static readonly INITIAL_POOL = 45_000_000;
 
+  // ============================================
+  // UNIFIED BALANCE MANAGEMENT HELPERS
+  // ============================================
+
+  /**
+   * Format balance for display with proper decimal places
+   */
+  static formatBalance(balance: number): string {
+    return balance.toFixed(4);
+  }
+
+  /**
+   * Calculate how much user has spent from their total earnings
+   */
+  static calculateSpent(totalEarned: number, currentBalance: number, totalClaimed: number): number {
+    return totalEarned - currentBalance - totalClaimed;
+  }
+
+  /**
+   * Get device upgrade cost in $SMOKE
+   * - Level 1 → 2: 500 $SMOKE
+   * - Level 2 → 3: 1,000 $SMOKE
+   * - Level 3 → 4: 2,000 $SMOKE
+   * - Costs double for each level up to Level 10
+   */
+  static getUpgradeCost(currentLevel: number): number {
+    if (currentLevel === 0) {
+      return 0; // First purchase is SOL, not $SMOKE
+    }
+
+    if (currentLevel >= 10) {
+      return 0; // Max level reached
+    }
+
+    // Level 1→2 costs 500 $SMOKE, then doubles each level
+    const baseCost = 500;
+    const levelsAbove1 = currentLevel - 1;
+    return Math.floor(baseCost * Math.pow(2, levelsAbove1));
+  }
+
+  /**
+   * Calculate passive income for display (24h cap)
+   */
+  static calculatePassiveIncomeDisplay(
+    deviceLevels: DeviceLevels,
+    globalStats: GlobalStats,
+    hoursSinceLastClaim: number
+  ): {
+    hourlyRate: number;
+    accumulatedAmount: number;
+    cappedHours: number;
+    isNearCap: boolean;
+  } {
+    const cappedHours = Math.min(hoursSinceLastClaim, 24);
+    const hourlyRate = this.calculatePassiveIncome(deviceLevels, globalStats, 1);
+    const accumulatedAmount = this.calculatePassiveIncome(deviceLevels, globalStats, cappedHours);
+    const isNearCap = hoursSinceLastClaim >= 20;
+
+    return {
+      hourlyRate,
+      accumulatedAmount,
+      cappedHours,
+      isNearCap
+    };
+  }
+
   /**
    * Calculate dynamic $SMOKE per puff (DIRECT REWARDS)
    * Factors:
@@ -111,29 +177,6 @@ export class GameEconomy {
     
     const totalSmoke = Math.floor(hourlySmoke * effectiveHours * deflationFactor);
     return totalSmoke;
-  }
-
-  /**
-   * Get device upgrade cost in $SMOKE
-   * - Level 1 → 2: FREE (first purchase with SOL)
-   * - Level 2 → 3: 1 $SMOKE
-   * - Level 3 → 4: 3 $SMOKE
-   * - Level 4 → 5: 10 $SMOKE
-   * - Level 5+: Exponential growth
-   */
-  static getUpgradeCost(currentLevel: number): number {
-    if (currentLevel === 0) {
-      return 0; // First purchase is SOL, not $SMOKE
-    }
-    
-    if (currentLevel === 1) {
-      return 0; // Level 1→2 is included in initial SOL purchase
-    }
-    
-    // Exponential costs for Level 2+
-    const baseCost = 1;
-    const exponent = currentLevel - 1;
-    return Math.floor(baseCost * Math.pow(3, exponent));
   }
 
   /**

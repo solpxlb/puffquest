@@ -1,36 +1,19 @@
 import { TrendingUp, AlertTriangle, Users, Flame } from "lucide-react";
 import { useSmokeEconomy } from "@/hooks/useSmokeEconomy";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useUnifiedBalance } from "@/hooks/useUnifiedBalance";
 import { GameEconomy } from "@/lib/GameEconomy";
 
 export const EarningsEstimator = () => {
-  const { publicKey } = useWallet();
   const { globalStats } = useSmokeEconomy();
 
-  const { data: profile } = useQuery({
-    queryKey: ['user-device-levels', publicKey?.toBase58()],
-    queryFn: async () => {
-      if (!publicKey) return null;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('device_levels')
-        .eq('wallet_address', publicKey.toBase58())
-        .single();
+  // Use unified balance data - single source of truth
+  const { data: balanceData } = useUnifiedBalance();
 
-      if (error) throw error;
-      return data?.device_levels as { vape: number; cigarette: number; cigar: number };
-    },
-    enabled: !!publicKey
-  });
-
-  if (!globalStats || !profile) {
+  if (!globalStats || !balanceData) {
     return null;
   }
 
-  const deviceLevels = profile || { vape: 0, cigarette: 0, cigar: 0 };
+  const deviceLevels = balanceData.device_levels as { vape: number; cigarette: number; cigar: number };
   const totalPlayers = globalStats.totalPlayers;
   
   const estimate = GameEconomy.estimateDailyEarnings(
@@ -69,7 +52,7 @@ export const EarningsEstimator = () => {
           <TrendingUp className={`w-7 h-7 ${
             isEarlyAdopter ? 'text-green-500' : isLateJoiner ? 'text-red-500' : 'text-yellow-500'
           }`} />
-          <h3 className="text-white text-xl font-bold uppercase">Daily Earnings</h3>
+          <h3 className="text-white text-xl font-bold uppercase">Estimated Daily Earnings</h3>
         </div>
         <div className="flex items-center gap-2 bg-black/30 rounded-full px-3 py-1">
           <Users className="w-4 h-4 text-gray-400" />
