@@ -30,38 +30,18 @@ serve(async (req) => {
       );
     }
 
-    // Get or create user profile
-    let { data: profile, error: profileError } = await supabaseClient
+    // Get user profile
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('id, wallet_address, vices')
       .eq('wallet_address', walletAddress)
       .single();
 
-    // If profile doesn't exist, create it
-    if (profileError && profileError.code === 'PGRST116') {
-      console.log('Profile not found, creating new profile for:', walletAddress);
-      const { data: newProfile, error: createError } = await supabaseClient
-        .from('profiles')
-        .insert({
-          wallet_address: walletAddress,
-          vices: []
-        })
-        .select('id, wallet_address, vices')
-        .single();
-
-      if (createError) {
-        console.error('Profile creation error:', createError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user profile' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      profile = newProfile;
-    } else if (profileError || !profile) {
+    if (profileError || !profile) {
       console.error('Profile lookup error:', profileError);
       return new Response(
-        JSON.stringify({ error: 'User profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'User not authenticated. Please sign in with your wallet first.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
