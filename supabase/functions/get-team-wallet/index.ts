@@ -12,11 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const teamWallet = Deno.env.get('TEAM_WALLET');
+    const teamWallet = Deno.env.get('TEAM_WALLET_ADDRESS');
 
     if (!teamWallet) {
       return new Response(
-        JSON.stringify({ error: 'Team wallet not configured' }),
+        JSON.stringify({ error: 'Team wallet address not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
