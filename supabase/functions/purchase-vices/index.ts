@@ -78,8 +78,8 @@ serve(async (req) => {
       );
     }
 
-    // Get team wallet and RPC URL from environment
-    const teamWallet = Deno.env.get('TEAM_WALLET');
+    // Get team wallet address and RPC URL from environment
+    const teamWallet = Deno.env.get('TEAM_WALLET_ADDRESS');
     const heliusRpc = Deno.env.get('HELIUS_DEVNET_RPC');
 
     if (!teamWallet || !heliusRpc) {
