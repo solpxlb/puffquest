@@ -30,14 +30,34 @@ serve(async (req) => {
       );
     }
 
-    // Get user by wallet address
-    const { data: profile, error: profileError } = await supabaseClient
+    // Get or create user profile
+    let { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('id, wallet_address, vices, device_levels')
+      .select('id, wallet_address, vices')
       .eq('wallet_address', walletAddress)
       .single();
 
-    if (profileError || !profile) {
+    // If profile doesn't exist, create it
+    if (profileError && profileError.code === 'PGRST116') {
+      console.log('Profile not found, creating new profile for:', walletAddress);
+      const { data: newProfile, error: createError } = await supabaseClient
+        .from('profiles')
+        .insert({
+          wallet_address: walletAddress,
+          vices: []
+        })
+        .select('id, wallet_address, vices')
+        .single();
+
+      if (createError) {
+        console.error('Profile creation error:', createError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user profile' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      profile = newProfile;
+    } else if (profileError || !profile) {
       console.error('Profile lookup error:', profileError);
       return new Response(
         JSON.stringify({ error: 'User profile not found' }),
@@ -172,27 +192,49 @@ serve(async (req) => {
     const currentVices = profile.vices || [];
     const newVices = Array.from(new Set([...currentVices, ...viceTypes]));
 
-    // Initialize device_levels for purchased vices (set to level 1 if not already owned)
-    const currentDeviceLevels = profile.device_levels || { vape: 0, cigarette: 0, cigar: 0 };
-    const updatedDeviceLevels = { ...currentDeviceLevels };
-    
-    viceTypes.forEach((vice: string) => {
-      if (updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] === 0) {
-        updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] = 1;
-      }
-    });
-
     const { error: updateError } = await supabaseClient
       .from('profiles')
-      .update({ 
-        vices: newVices,
-        device_levels: updatedDeviceLevels
+      .update({
+        vices: newVices
       })
       .eq('id', user.id);
 
     if (updateError) {
       console.error('Profile update error:', updateError);
       throw updateError;
+    }
+
+    // Get or create user_smoke_balance record
+    const { data: balanceData, error: balanceError } = await supabaseClient
+      .from('user_smoke_balance')
+      .select('device_levels')
+      .eq('user_id', walletAddress)
+      .single();
+
+    // Initialize device_levels for purchased vices (set to level 1 if not already owned)
+    const currentDeviceLevels = balanceData?.device_levels || { vape: 0, cigarette: 0, cigar: 0 };
+    const updatedDeviceLevels = { ...currentDeviceLevels };
+
+    viceTypes.forEach((vice: string) => {
+      if (updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] === 0) {
+        updatedDeviceLevels[vice as keyof typeof updatedDeviceLevels] = 1;
+      }
+    });
+
+    // Update device levels in user_smoke_balance
+    const { error: balanceUpdateError } = await supabaseClient
+      .from('user_smoke_balance')
+      .upsert({
+        user_id: walletAddress,
+        device_levels: updatedDeviceLevels,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (balanceUpdateError) {
+      console.error('Balance update error:', balanceUpdateError);
+      throw balanceUpdateError;
     }
 
     // Record purchase
