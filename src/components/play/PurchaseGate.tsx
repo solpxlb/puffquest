@@ -99,7 +99,7 @@ export const PurchaseGate = ({ onPurchaseComplete }: PurchaseGateProps) => {
         description: "Please wait while we verify your purchase...",
       });
 
-      const { error } = await supabase.functions.invoke("purchase-vices", {
+      const { data, error } = await supabase.functions.invoke("purchase-vices", {
         body: {
           viceTypes: selectedVices,
           transactionSignature: signature,
@@ -107,7 +107,12 @@ export const PurchaseGate = ({ onPurchaseComplete }: PurchaseGateProps) => {
         },
       });
 
-      if (error) throw error;
+      console.log("Purchase response:", { data, error });
+
+      if (error) {
+        console.error("Full error details:", error);
+        throw new Error(error.message || data?.error || "Purchase verification failed");
+      }
 
       toast({
         title: "Purchase Successful! 🎉",
