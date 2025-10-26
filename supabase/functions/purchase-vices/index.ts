@@ -221,7 +221,7 @@ serve(async (req) => {
     const { error: purchaseError } = await supabaseClient
       .from('vice_purchases')
       .insert({
-        user_id: user.id,
+        user_id: walletAddress,
         vice_types: viceTypes,
         total_amount: expectedAmount,
         transaction_signature: transactionSignature,
