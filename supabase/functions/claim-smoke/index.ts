@@ -21,6 +21,7 @@ import {
   PublicKey,
   Transaction,
   SystemProgram,
+  TransactionInstruction,
 } from 'npm:@solana/web3.js@1.98.4';
 import {
   getAssociatedTokenAddress,
@@ -208,6 +209,18 @@ serve(async (req) => {
 
     // Build transaction
     const transaction = new Transaction();
+
+    // Add a unique memo to prevent duplicate transaction errors
+    // This ensures each transaction is unique even if retried with the same blockhash
+    const timestamp = Date.now();
+    const memoText = `PuffQuest Claim: ${smokeBalance.toFixed(4)} $SMOKE - ${timestamp}`;
+    const memoData = new TextEncoder().encode(memoText);
+    const memoInstruction = new TransactionInstruction({
+      keys: [{ pubkey: userWallet, isSigner: true, isWritable: false }],
+      programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+      data: memoData,
+    });
+    transaction.add(memoInstruction);
 
     // Add create token account instruction if needed
     if (needsTokenAccount) {
