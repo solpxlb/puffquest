@@ -114,35 +114,49 @@ All colors MUST be HSL.
 }
 
 /* Solana Wallet Adapter CSS Overrides */
-@layer components {
-  /* Override wallet adapter button styles to match Puff Quest design */
-  .wallet-adapter-button {
-    @apply bg-transparent border-2 border-white text-white hover:bg-white/10 transition-all px-6 py-2 text-base font-retropix;
-    height: auto !important;
-    line-height: normal !important;
-  }
+/* These MUST be outside @layer to override the default wallet adapter styles */
+.wallet-adapter-button {
+  background-color: transparent !important;
+  border: 2px solid white !important;
+  color: white !important;
+  font-family: 'RetroPix', monospace !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  height: auto !important;
+  line-height: normal !important;
+  padding: 0.5rem 1.5rem !important;
+  transition: all 0.2s ease !important;
+  border-radius: 0.5rem !important;
+}
 
-  .wallet-adapter-button-trigger {
-    @apply bg-transparent border-2 border-white text-white hover:bg-white/10 hover:border-white transition-all px-6 py-2 text-base font-retropix;
-  }
+.wallet-adapter-button-trigger {
+  background-color: transparent !important;
+  border: 2px solid white !important;
+  color: white !important;
+}
 
-  .wallet-adapter-button:not([disabled]):hover {
-    @apply bg-white/10 text-white border-white;
-  }
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: white !important;
+  color: white !important;
+}
 
-  .wallet-adapter-modal-wrapper {
-    @apply font-retropix;
-  }
+.wallet-adapter-button:not([disabled]):focus-visible {
+  outline-color: white !important;
+}
 
-  .wallet-adapter-modal-title {
-    @apply font-retropix;
-  }
+.wallet-adapter-modal-wrapper {
+  font-family: 'RetroPix', monospace !important;
+}
 
-  .wallet-adapter-modal-list {
-    @apply font-retropix;
-  }
+.wallet-adapter-modal-title {
+  font-family: 'RetroPix', monospace !important;
+}
 
-  .wallet-adapter-modal-list-more {
-    @apply font-retropix;
-  }
+.wallet-adapter-modal-list {
+  font-family: 'RetroPix', monospace !important;
+}
+
+.wallet-adapter-modal-list-more {
+  font-family: 'RetroPix', monospace !important;
 }
