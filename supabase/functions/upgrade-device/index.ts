@@ -124,6 +124,7 @@ serve(async (req) => {
     const upgradeCost = getUpgradeCost(currentLevel)
 
     // Verify the token transfer transaction on-chain
+    // TODO: Update with mainnet $SMOKE token mint address when token is deployed
     const smokeMint = new PublicKey(Deno.env.get('SMOKE_MINT') || '')
     const heliusRpc = Deno.env.get('HELIUS_DEVNET_RPC')
 

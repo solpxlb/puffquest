@@ -24,8 +24,11 @@ import {
 } from 'npm:@solana/web3.js@1.98.4';
 import { TOKEN_PROGRAM_ID } from 'npm:@solana/spl-token@0.3.11';
 
+// TODO: Update with mainnet program ID when $SMOKE token is deployed
 const PROGRAM_ID = new PublicKey('9NM3C5tGSANRzNdD3AohxszHntCGbYCPCreAtebpFEiF');
+// TODO: Update with mainnet authority/treasury wallet when $SMOKE token is deployed
 const AUTHORITY_PUBKEY = new PublicKey('Ws6mU44XByyeQk1rfptnwsAQxgMhdKVHAGT1GgndTAS');
+// TODO: Update with mainnet $SMOKE token mint address when token is deployed
 const SMOKE_MINT = new PublicKey('HiecAy5Mc4jQSYcVXtbTZRYujtX3KqY2VmhnaNUi8FwN');
 
 // Helper function to concatenate Uint8Arrays (Deno equivalent of Buffer.concat)
@@ -71,7 +74,7 @@ serve(async (req) => {
     console.log('[Request] Body parsed successfully');
 
     // Setup Solana connection
-    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.devnet.solana.com';
+    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.mainnet-beta.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Load authority keypair (TEAM_WALLET contains the private key)

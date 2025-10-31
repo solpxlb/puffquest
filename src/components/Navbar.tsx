@@ -15,7 +15,7 @@ const Navbar = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Play", href: "/play" },
-    { name: "Earnings", href: "/earnings" },
+    // { name: "Earnings", href: "/earnings" }, // Hidden during beta - will be enabled when $SMOKE launches
   ];
 
   return (

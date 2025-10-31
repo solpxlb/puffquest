@@ -280,7 +280,8 @@ const Play = () => {
             {/* Devices Owned */}
             <DevicesOwned />
 
-            {/* Earnings Link */}
+            {/* Earnings Link - Hidden during beta */}
+            {/*
             <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg p-6 border-2 border-orange-500/30">
               <div className="text-center">
                 <h3 className="text-white text-xl font-bold mb-3">View Your Earnings</h3>
@@ -295,6 +296,7 @@ const Play = () => {
                 </Link>
               </div>
             </div>
+            */}
           </div>
         )}
       </main>

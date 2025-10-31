@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
 import { SMOKE_MINT } from "@/lib/SmokeClaimContract";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useWalletTokenBalance = () => {
   const { publicKey } = useWallet();
@@ -13,8 +14,10 @@ export const useWalletTokenBalance = () => {
       if (!publicKey || !SMOKE_MINT) return 0;
 
       try {
-        // Use devnet connection
-        const connection = new Connection("https://api.devnet.solana.com");
+        // Get RPC URL from backend
+        const { data: rpcData } = await supabase.functions.invoke('get-rpc-url');
+        const rpcUrl = rpcData?.rpcUrl || "https://api.mainnet-beta.solana.com";
+        const connection = new Connection(rpcUrl);
 
         // Get the user's token account address
         const userTokenAccount = await getAssociatedTokenAddress(

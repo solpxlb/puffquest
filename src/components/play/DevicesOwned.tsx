@@ -166,7 +166,10 @@ export const DevicesOwned = () => {
     let tokenTransferSignature = retrySignature;
 
     try {
-      const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+      // Get RPC URL from backend
+      const { data: rpcData } = await supabase.functions.invoke('get-rpc-url');
+      const rpcUrl = rpcData?.rpcUrl || "https://api.mainnet-beta.solana.com";
+      const connection = new Connection(rpcUrl, "confirmed");
 
       // Step 1: Handle token transfer (skip if retrying with existing signature)
       if (!retrySignature) {
@@ -412,26 +415,22 @@ export const DevicesOwned = () => {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            onClick={() => handleUpgradeDevice(deviceType)}
-                            disabled={isUpgrading || !canAffordUpgrade}
-                            className="w-full"
-                            variant={canAffordUpgrade ? "default" : "outline"}
-                          >
-                            {!canAffordUpgrade && "🔒 "}
-                            UPGRADE - {upgradeCost === 0 ? "FREE" : `${upgradeCost} $SMOKE`}
-                          </Button>
+                          <div className="w-full">
+                            <Button
+                              disabled
+                              className="w-full opacity-60"
+                              variant="outline"
+                            >
+                              🚀 COMING SOON
+                            </Button>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {!canAffordUpgrade ? (
-                            <p>Need {(upgradeCost - (walletSmokeBalance || 0)).toFixed(4)} more $SMOKE</p>
-                          ) : (
-                            <div className="text-xs space-y-1">
-                              <p className="font-bold">Next Level Benefits:</p>
-                              <p>+5 points per puff</p>
-                              <p>+10 passive points/hr</p>
-                            </div>
-                          )}
+                          <div className="text-xs space-y-1">
+                            <p className="font-bold">Device upgrades coming soon!</p>
+                            <p>Available after $SMOKE token launch</p>
+                            <p className="text-muted-foreground mt-2">Cost: {upgradeCost} $SMOKE</p>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

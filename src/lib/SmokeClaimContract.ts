@@ -7,12 +7,15 @@
 import { PublicKey, Connection, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
 
+// TODO: Update with mainnet program ID when $SMOKE token is deployed
 export const SMOKE_PROGRAM_ID = new PublicKey(
   import.meta.env.VITE_SMOKE_PROGRAM_ID || '9NM3C5tGSANRzNdD3AohxszHntCGbYCPCreAtebpFEiF'
 );
 
+// TODO: Update with mainnet authority/treasury wallet when $SMOKE token is deployed
 export const AUTHORITY_PUBKEY = new PublicKey('Ws6mU44XByyeQk1rfptnwsAQxgMhdKVHAGT1GgndTAS');
 
+// TODO: Update with mainnet $SMOKE token mint address when token is deployed
 export const SMOKE_MINT = new PublicKey(
   import.meta.env.VITE_SMOKE_MINT || ''
 );
@@ -145,7 +148,7 @@ export function formatClaimError(error: unknown): string {
 /**
  * Generate Solana Explorer URL for a transaction
  */
-export function getExplorerUrl(signature: string, cluster: 'mainnet-beta' | 'devnet' = 'devnet'): string {
+export function getExplorerUrl(signature: string, cluster: 'mainnet-beta' | 'devnet' = 'mainnet-beta'): string {
   return `https://explorer.solana.com/tx/${signature}?cluster=${cluster}`;
 }
 

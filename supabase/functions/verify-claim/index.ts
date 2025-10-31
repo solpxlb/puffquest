@@ -17,7 +17,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Connection, PublicKey } from 'npm:@solana/web3.js@1.98.4';
 
+// TODO: Update with mainnet program ID when $SMOKE token is deployed
 const PROGRAM_ID = new PublicKey('9NM3C5tGSANRzNdD3AohxszHntCGbYCPCreAtebpFEiF');
+// TODO: Update with mainnet authority/treasury wallet when $SMOKE token is deployed
 const AUTHORITY_PUBKEY = new PublicKey('Ws6mU44XByyeQk1rfptnwsAQxgMhdKVHAGT1GgndTAS');
 const CLAIM_FEE_LAMPORTS = 20_000_000; // 0.02 SOL
 
@@ -104,7 +106,7 @@ serve(async (req) => {
     const claimedAmount = parseFloat(balanceData.current_balance || '0');
 
     // Setup Solana connection
-    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.devnet.solana.com';
+    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.mainnet-beta.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Verify transaction on-chain with retries

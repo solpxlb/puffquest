@@ -30,7 +30,9 @@ import {
 } from 'npm:@solana/spl-token@0.3.11';
 import { BN } from 'npm:bn.js@5.2.1';
 
+// TODO: Update with mainnet program ID when $SMOKE token is deployed
 const PROGRAM_ID = new PublicKey('9NM3C5tGSANRzNdD3AohxszHntCGbYCPCreAtebpFEiF');
+// TODO: Update with mainnet authority/treasury wallet when $SMOKE token is deployed
 const AUTHORITY_PUBKEY = new PublicKey('Ws6mU44XByyeQk1rfptnwsAQxgMhdKVHAGT1GgndTAS');
 const CLAIM_FEE_LAMPORTS = 20_000_000; // 0.02 SOL
 const MIN_SOL_REQUIRED = 25_000_000; // 0.025 SOL (fee + gas)
@@ -131,7 +133,7 @@ serve(async (req) => {
     console.log(`[Balance] User has ${smokeBalance} $SMOKE to claim`);
 
     // Setup Solana connection
-    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.devnet.solana.com';
+    const rpcUrl = Deno.env.get('HELIUS_DEVNET_RPC') || 'https://api.mainnet-beta.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Load authority keypair (TEAM_WALLET contains the private key)
