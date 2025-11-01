@@ -21,7 +21,7 @@ export const LifetimeStats = () => {
   return (
     <div className="bg-gray-700 rounded-lg p-6 border-2 border-gray-600 hover:border-gray-500 transition-colors">
       <h3 className="text-white text-xl font-bold uppercase mb-6 border-b-2 border-gray-600 pb-2">
-        Lifetime Stats
+        Lifetime Stats (demo mode)
       </h3>
 
       <div className="space-y-4">
